@@ -1,0 +1,185 @@
+service: threatalytics-gpt-api
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: dev
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - secretsmanager:GetSecretValue
+      Resource: "arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:threatalytics-openai-key-*"
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:Query
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsUsage"
+        - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsPlans"
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource: "arn:aws:logs:${self:provider.region}:${aws:accountId}:log-group:/aws/lambda/threatalytics-gpt-api-${self:provider.stage}-*:*"
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+      Resource: "arn:aws:s3:::threatalytics-logs-${aws:accountId}/*"
+    - Effect: Allow
+      Action:
+        - sns:Publish
+      Resource: "arn:aws:sns:${self:provider.region}:${aws:accountId}:threatalytics-alerts"
+
+  # Enable CloudTrail for audit logging
+  trails:
+    - name: threatalytics-trail
+      s3BucketName: threatalytics-cloudtrail-${aws:accountId}
+      includeGlobalServiceEvents: true
+      isMultiRegionTrail: false
+      enableLogFileValidation: true
+
+apiKeys:
+  - free:
+      - name: free-tier-key
+        description: Free tier API key
+  - pro:
+      - name: pro-tier-key
+        description: Pro tier API key
+
+usagePlan:
+  - free:
+      throttle:
+        burstLimit: 5
+        rateLimit: 10
+      quota:
+        limit: 500
+        offset: 0
+        period: MONTH
+  - pro:
+      throttle:
+        burstLimit: 20
+        rateLimit: 100
+      quota:
+        limit: 5000
+        offset: 0
+        period: MONTH
+
+functions:
+  analyze:
+    handler: lambda_functions/analyze.lambda_handler
+    events:
+      - http:
+          path: /analyze
+          method: post
+          cors: true
+          private: true  # requires API key
+
+  redact:
+    handler: lambda_functions/redact.lambda_handler
+    events:
+      - http:
+          path: /redact
+          method: post
+          cors: true
+          private: true
+
+  report:
+    handler: lambda_functions/report.lambda_handler
+    events:
+      - http:
+          path: /report
+          method: post
+          cors: true
+          private: true
+
+  drill:
+    handler: lambda_functions/drill.lambda_handler
+    events:
+      - http:
+          path: /drill
+          method: post
+          cors: true
+          private: true
+
+  stripe_webhook:
+    handler: lambda_functions/stripe_webhook.lambda_handler
+    events:
+      - http:
+          path: /stripe/webhook
+          method: post
+
+resources:
+  Resources:
+    UsageTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ThreatalyticsUsage
+        AttributeDefinitions:
+          - AttributeName: api_key
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+        KeySchema:
+          - AttributeName: api_key
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+
+    PlansTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ThreatalyticsPlans
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+
+    LogsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: threatalytics-logs-${aws:accountId}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        EncryptionConfiguration:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+
+    AlertsTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: threatalytics-alerts
+        DisplayName: Threatalytics Security Alerts
+
+    CloudTrailBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: threatalytics-cloudtrail-${aws:accountId}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+
+plugins:
+  - serverless-python-requirements
