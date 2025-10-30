@@ -76,7 +76,15 @@ functions:
       - http:
           path: /analyze
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Api-Key
+              - X-Amz-Date
+              - Authorization
+              - X-Amz-Security-Token
+            allowCredentials: false
           private: true  # requires API key
 
   redact:
@@ -85,7 +93,15 @@ functions:
       - http:
           path: /redact
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Api-Key
+              - X-Amz-Date
+              - Authorization
+              - X-Amz-Security-Token
+            allowCredentials: false
           private: true
 
   report:
@@ -94,7 +110,15 @@ functions:
       - http:
           path: /report
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Api-Key
+              - X-Amz-Date
+              - Authorization
+              - X-Amz-Security-Token
+            allowCredentials: false
           private: true
 
   drill:
@@ -103,7 +127,15 @@ functions:
       - http:
           path: /drill
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Api-Key
+              - X-Amz-Date
+              - Authorization
+              - X-Amz-Security-Token
+            allowCredentials: false
           private: true
 
   stripe_webhook:
@@ -112,6 +144,14 @@ functions:
       - http:
           path: /stripe/webhook
           method: post
+
+  demo:
+    handler: lambda_functions/demo.lambda_handler
+    events:
+      - http:
+          path: /demo
+          method: post
+          cors: true
 
 resources:
   Resources:
