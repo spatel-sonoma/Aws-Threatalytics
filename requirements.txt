@@ -2,3 +2,4 @@ boto3
 openai
 stripe
 requests
+PyPDF2
