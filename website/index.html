@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -41,11 +41,12 @@
         }
 
         .demo-section {
-            background: white;
+            background: #2d2d2d;
             border-radius: 20px;
             padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             margin-bottom: 30px;
+            border: 2px solid #3d3d3d;
         }
 
         .tab-buttons {
@@ -57,8 +58,9 @@
 
         .tab-btn {
             padding: 15px 30px;
-            border: none;
-            background: #f0f0f0;
+            border: 2px solid #3d3d3d;
+            background: #1a1a1a;
+            color: #cccccc;
             border-radius: 10px;
             cursor: pointer;
             font-size: 16px;
@@ -69,10 +71,11 @@
         }
 
         .tab-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
             color: white;
+            border-color: #ff7b1c;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(216, 90, 0, 0.5);
         }
 
         .tab-btn:hover {
@@ -87,13 +90,15 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #333;
+            color: #e0e0e0;
         }
 
         .input-group textarea {
             width: 100%;
             padding: 15px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #3d3d3d;
+            background: #1a1a1a;
+            color: #e0e0e0;
             border-radius: 10px;
             font-size: 16px;
             font-family: inherit;
@@ -104,13 +109,14 @@
 
         .input-group textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #ff7b1c;
+            background: #242424;
         }
 
         .demo-btn {
             width: 100%;
             padding: 18px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
             color: white;
             border: none;
             border-radius: 10px;
@@ -118,25 +124,28 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(216, 90, 0, 0.5);
         }
 
         .demo-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+            box-shadow: 0 8px 25px rgba(216, 90, 0, 0.7);
+            background: linear-gradient(135deg, #ff7b1c 0%, #ff9500 100%);
         }
 
         .demo-btn:disabled {
-            background: #ccc;
+            background: #4d4d4d;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         .result-section {
             margin-top: 30px;
             padding: 20px;
-            background: #f8f9fa;
+            background: #1a1a1a;
             border-radius: 10px;
+            border: 2px solid #3d3d3d;
             display: none;
         }
 
@@ -146,44 +155,46 @@
 
         .result-section h3 {
             margin-bottom: 15px;
-            color: #333;
+            color: #ff7b1c;
         }
 
         .result-content {
-            background: white;
+            background: #242424;
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #ff7b1c;
             white-space: pre-wrap;
             word-wrap: break-word;
             line-height: 1.6;
+            color: #e0e0e0;
         }
 
         .loading {
             text-align: center;
             padding: 20px;
-            color: #667eea;
+            color: #ff7b1c;
             font-weight: 600;
         }
 
         .error {
-            background: #fee;
-            border-left-color: #f44;
-            color: #c33;
+            background: #3d1a1a;
+            border-left-color: #ff4444;
+            color: #ff8888;
         }
 
         .pricing-section {
-            background: white;
+            background: #2d2d2d;
             border-radius: 20px;
             padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             margin-bottom: 30px;
+            border: 2px solid #3d3d3d;
         }
 
         .pricing-section h2 {
             text-align: center;
             margin-bottom: 40px;
-            color: #333;
+            color: #ff7b1c;
             font-size: 36px;
         }
 
@@ -194,29 +205,36 @@
         }
 
         .pricing-card {
-            background: #f8f9fa;
+            background: #1a1a1a;
             border-radius: 15px;
             padding: 30px;
             text-align: center;
             transition: all 0.3s;
-            border: 3px solid transparent;
+            border: 3px solid #3d3d3d;
+            color: #e0e0e0;
         }
 
         .pricing-card:hover {
             transform: translateY(-5px);
-            border-color: #667eea;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-color: #ff7b1c;
+            box-shadow: 0 10px 30px rgba(216, 90, 0, 0.4);
         }
 
         .pricing-card.featured {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
             color: white;
             transform: scale(1.05);
+            border-color: #ff7b1c;
         }
 
         .pricing-card h3 {
             font-size: 28px;
             margin-bottom: 10px;
+            color: #ff7b1c;
+        }
+
+        .pricing-card.featured h3 {
+            color: white;
         }
 
         .pricing-card .price {
@@ -238,7 +256,7 @@
 
         .pricing-card ul li {
             padding: 10px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            border-bottom: 1px solid #3d3d3d;
         }
 
         .pricing-card.featured ul li {
@@ -247,7 +265,7 @@
 
         .pricing-card ul li:before {
             content: "✓ ";
-            color: #667eea;
+            color: #ff7b1c;
             font-weight: bold;
             margin-right: 10px;
         }
@@ -259,7 +277,7 @@
         .buy-btn {
             width: 100%;
             padding: 15px;
-            background: #667eea;
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
             color: white;
             border: none;
             border-radius: 10px;
@@ -272,12 +290,17 @@
 
         .pricing-card.featured .buy-btn {
             background: white;
-            color: #667eea;
+            color: #d85a00;
         }
 
         .buy-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(216, 90, 0, 0.5);
+            background: linear-gradient(135deg, #ff7b1c 0%, #ff9500 100%);
+        }
+
+        .pricing-card.featured .buy-btn:hover {
+            background: #f0f0f0;
         }
 
         .footer {
@@ -288,11 +311,14 @@
         }
 
         .feature-highlight {
-            background: #e8f4f8;
+            background: #1a1a1a;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #ff7b1c;
+            color: #e0e0e0;
+            border: 2px solid #3d3d3d;
+            border-left: 4px solid #ff7b1c;
         }
 
         @media (max-width: 768px) {
@@ -319,7 +345,7 @@
 
         <!-- Live Demo Section -->
         <div class="demo-section">
-            <h2 style="margin-bottom: 20px; color: #333;">🎯 Live Demo - Try It Now</h2>
+            <h2 style="margin-bottom: 20px; color: #ff7b1c;">🎯 Live Demo</h2>
             
             <div class="feature-highlight">
                 <strong>🔒 Secure & FERPA-Compliant</strong> | Real-time threat analysis with automatic PII redaction
