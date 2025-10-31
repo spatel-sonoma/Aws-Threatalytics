@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Threatalytics AI - Threat Analysis Powered by GPT</title>
+    <title>Threatalytics AI - Conversational Threat Analysis</title>
     <style>
         * {
             margin: 0;
@@ -12,525 +12,1004 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            color: white;
-            padding: 40px 0;
-        }
-
-        .header h1 {
-            font-size: 48px;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header p {
-            font-size: 20px;
-            opacity: 0.9;
-        }
-
-        .demo-section {
-            background: #2d2d2d;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            margin-bottom: 30px;
-            border: 2px solid #3d3d3d;
-        }
-
-        .tab-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            padding: 15px 30px;
-            border: 2px solid #3d3d3d;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
             background: #1a1a1a;
-            color: #cccccc;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 150px;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .tab-btn.active {
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #0f0f0f;
+            border-right: 1px solid #2d2d2d;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #2d2d2d;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 12px 16px;
             background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
             color: white;
-            border-color: #ff7b1c;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(216, 90, 0, 0.5);
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
         }
 
-        .tab-btn:hover {
-            transform: translateY(-2px);
+        .new-chat-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
 
-        .input-group {
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .nav-section {
             margin-bottom: 20px;
         }
 
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
+        .nav-section-title {
+            color: #666;
+            font-size: 12px;
             font-weight: 600;
-            color: #e0e0e0;
+            text-transform: uppercase;
+            padding: 10px 12px;
+            letter-spacing: 0.5px;
         }
 
-        .input-group textarea {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #3d3d3d;
+        .nav-item {
+            padding: 12px 16px;
+            margin: 4px 0;
+            color: #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background: #2d2d2d;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
+            color: white;
+        }
+
+        .nav-item .icon {
+            font-size: 18px;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid #2d2d2d;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .user-info:hover {
+            background: #2d2d2d;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            color: #e0e0e0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .user-plan {
+            color: #888;
+            font-size: 12px;
+        }
+
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             background: #1a1a1a;
-            color: #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 120px;
-            transition: border-color 0.3s;
         }
 
-        .input-group textarea:focus {
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-title h1 {
+            color: #e0e0e0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .mode-badge {
+            padding: 4px 12px;
+            background: rgba(216, 90, 0, 0.2);
+            color: #ff7b1c;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .message {
+            display: flex;
+            gap: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .user-avatar-msg {
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
+        }
+
+        .ai-avatar-msg {
+            background: #2d2d2d;
+            color: #ff7b1c;
+        }
+
+        .message-content {
+            flex: 1;
+            color: #e0e0e0;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+
+        .message-content p {
+            margin-bottom: 16px;
+        }
+
+        .message-content pre {
+            background: #0f0f0f;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border-left: 3px solid #ff7b1c;
+            margin: 12px 0;
+        }
+
+        .message-content code {
+            background: #2d2d2d;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #ff9500;
+        }
+
+        .message-content h1,
+        .message-content h2,
+        .message-content h3 {
+            color: #ff7b1c;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .message-content h1 {
+            font-size: 22px;
+            border-bottom: 2px solid #3d3d3d;
+            padding-bottom: 8px;
+        }
+
+        .message-content h2 {
+            font-size: 19px;
+        }
+
+        .message-content h3 {
+            font-size: 17px;
+        }
+
+        .message-content ul,
+        .message-content ol {
+            margin: 12px 0;
+            padding-left: 24px;
+        }
+
+        .message-content li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .message-content strong {
+            color: #ff7b1c;
+            font-weight: 600;
+        }
+
+        .message-content em {
+            color: #888;
+            font-style: italic;
+        }
+
+        .message-content blockquote {
+            border-left: 4px solid #ff7b1c;
+            padding-left: 16px;
+            margin: 16px 0;
+            color: #888;
+            font-style: italic;
+        }
+
+        .message-content hr {
+            border: none;
+            border-top: 1px solid #3d3d3d;
+            margin: 20px 0;
+        }
+
+        .message-content a {
+            color: #ff7b1c;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .message-content a:hover {
+            border-bottom-color: #ff7b1c;
+        }
+
+        .threat-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 4px 4px 4px 0;
+        }
+
+        .threat-high {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 1px solid #ff4444;
+        }
+
+        .threat-medium {
+            background: rgba(255, 149, 0, 0.2);
+            color: #ff9500;
+            border: 1px solid #ff9500;
+        }
+
+        .threat-low {
+            background: rgba(76, 217, 100, 0.2);
+            color: #4cd964;
+            border: 1px solid #4cd964;
+        }
+
+        .info-box {
+            background: #2d2d2d;
+            border: 2px solid #3d3d3d;
+            border-left: 4px solid #ff7b1c;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+
+        .info-box-title {
+            color: #ff7b1c;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h2 {
+            color: #e0e0e0;
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            color: #888;
+            font-size: 16px;
+            margin-bottom: 32px;
+        }
+
+        .suggestion-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .suggestion-card {
+            padding: 16px;
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .suggestion-card:hover {
+            background: #3d3d3d;
+            border-color: #ff7b1c;
+            transform: translateY(-2px);
+        }
+
+        .suggestion-card-title {
+            color: #e0e0e0;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .suggestion-card-text {
+            color: #888;
+            font-size: 13px;
+        }
+
+        /* Input Area */
+        .chat-input-container {
+            padding: 24px;
+            border-top: 1px solid #2d2d2d;
+            background: #1a1a1a;
+        }
+
+        .chat-input-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .chat-input {
+            width: 100%;
+            padding: 16px 60px 16px 20px;
+            background: #2d2d2d;
+            border: 2px solid #3d3d3d;
+            border-radius: 24px;
+            color: #e0e0e0;
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            min-height: 56px;
+            max-height: 200px;
+            transition: all 0.2s;
+        }
+
+        .chat-input:focus {
             outline: none;
             border-color: #ff7b1c;
             background: #242424;
         }
 
-        .demo-btn {
-            width: 100%;
-            padding: 18px;
+        .chat-input::placeholder {
+            color: #666;
+        }
+
+        .send-button {
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            width: 40px;
+            height: 40px;
             background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
-            color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: 600;
+            border-radius: 50%;
+            color: white;
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(216, 90, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
 
-        .demo-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(216, 90, 0, 0.7);
-            background: linear-gradient(135deg, #ff7b1c 0%, #ff9500 100%);
+        .send-button:hover:not(:disabled) {
+            transform: scale(1.05);
         }
 
-        .demo-btn:disabled {
-            background: #4d4d4d;
+        .send-button:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
         }
 
-        .result-section {
-            margin-top: 30px;
-            padding: 20px;
-            background: #1a1a1a;
-            border-radius: 10px;
-            border: 2px solid #3d3d3d;
+        .typing-indicator {
             display: none;
+            padding: 12px 20px;
+            background: #2d2d2d;
+            border-radius: 18px;
+            width: fit-content;
         }
 
-        .result-section.show {
+        .typing-indicator.show {
             display: block;
         }
 
-        .result-section h3 {
-            margin-bottom: 15px;
-            color: #ff7b1c;
+        .typing-dots {
+            display: flex;
+            gap: 6px;
         }
 
-        .result-content {
-            background: #242424;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #ff7b1c;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            line-height: 1.6;
-            color: #e0e0e0;
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #ff7b1c;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
         }
 
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #ff7b1c;
-            font-weight: 600;
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
         }
 
-        .error {
-            background: #3d1a1a;
-            border-left-color: #ff4444;
-            color: #ff8888;
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
         }
 
-        .pricing-section {
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 1000;
+            width: 40px;
+            height: 40px;
             background: #2d2d2d;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            margin-bottom: 30px;
-            border: 2px solid #3d3d3d;
-        }
-
-        .pricing-section h2 {
-            text-align: center;
-            margin-bottom: 40px;
-            color: #ff7b1c;
-            font-size: 36px;
-        }
-
-        .pricing-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-        }
-
-        .pricing-card {
-            background: #1a1a1a;
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            transition: all 0.3s;
-            border: 3px solid #3d3d3d;
-            color: #e0e0e0;
-        }
-
-        .pricing-card:hover {
-            transform: translateY(-5px);
-            border-color: #ff7b1c;
-            box-shadow: 0 10px 30px rgba(216, 90, 0, 0.4);
-        }
-
-        .pricing-card.featured {
-            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
-            color: white;
-            transform: scale(1.05);
-            border-color: #ff7b1c;
-        }
-
-        .pricing-card h3 {
-            font-size: 28px;
-            margin-bottom: 10px;
-            color: #ff7b1c;
-        }
-
-        .pricing-card.featured h3 {
-            color: white;
-        }
-
-        .pricing-card .price {
-            font-size: 48px;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-
-        .pricing-card .price span {
-            font-size: 20px;
-            font-weight: normal;
-        }
-
-        .pricing-card ul {
-            list-style: none;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .pricing-card ul li {
-            padding: 10px 0;
-            border-bottom: 1px solid #3d3d3d;
-        }
-
-        .pricing-card.featured ul li {
-            border-bottom-color: rgba(255,255,255,0.2);
-        }
-
-        .pricing-card ul li:before {
-            content: "✓ ";
-            color: #ff7b1c;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-
-        .pricing-card.featured ul li:before {
-            color: #fff;
-        }
-
-        .buy-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
-            color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.3s;
-        }
-
-        .pricing-card.featured .buy-btn {
-            background: white;
-            color: #d85a00;
-        }
-
-        .buy-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(216, 90, 0, 0.5);
-            background: linear-gradient(135deg, #ff7b1c 0%, #ff9500 100%);
-        }
-
-        .pricing-card.featured .buy-btn:hover {
-            background: #f0f0f0;
-        }
-
-        .footer {
-            text-align: center;
-            color: white;
-            padding: 20px;
-            opacity: 0.8;
-        }
-
-        .feature-highlight {
-            background: #1a1a1a;
-            padding: 15px;
             border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #ff7b1c;
             color: #e0e0e0;
-            border: 2px solid #3d3d3d;
-            border-left: 4px solid #ff7b1c;
+            cursor: pointer;
         }
 
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 32px;
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                height: 100vh;
+                z-index: 999;
             }
-            
-            .tab-buttons {
-                flex-direction: column;
+
+            .sidebar.open {
+                left: 0;
             }
-            
-            .tab-btn {
-                min-width: 100%;
+
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
+
+            .chat-header {
+                padding-left: 64px;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #3d3d3d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4d4d4d;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🛡️ Threatalytics AI</h1>
-            <p>Advanced Threat Analysis Powered by GPT-4 on AWS</p>
-        </div>
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
 
-        <!-- Live Demo Section -->
-        <div class="demo-section">
-            <h2 style="margin-bottom: 20px; color: #ff7b1c;">🎯 Live Demo</h2>
-            
-            <div class="feature-highlight">
-                <strong>🔒 Secure & FERPA-Compliant</strong> | Real-time threat analysis with automatic PII redaction
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" onclick="newChat()">
+                    <span>➕</span>
+                    <span>New Analysis</span>
+                </button>
             </div>
 
-            <div class="tab-buttons">
-                <button class="tab-btn active" onclick="switchTab('analyze')">Threat Analysis</button>
-                <button class="tab-btn" onclick="switchTab('redact')">PII Redaction</button>
-                <button class="tab-btn" onclick="switchTab('report')">Generate Report</button>
-                <button class="tab-btn" onclick="switchTab('drill')">Simulate Drill</button>
-            </div>
-
-            <div id="analyze-tab" class="tab-content">
-                <div class="input-group">
-                    <label>Enter threat scenario or behavioral data:</label>
-                    <textarea id="analyze-input" placeholder="Example: Student john.doe@school.edu accessed restricted admin files 5 times within one hour. Multiple failed login attempts detected from same IP address."></textarea>
-                </div>
-                <button class="demo-btn" onclick="runDemo('analyze')">🔍 Analyze Threat</button>
-            </div>
-
-            <div id="redact-tab" class="tab-content" style="display: none;">
-                <div class="input-group">
-                    <label>Enter text containing PII to redact:</label>
-                    <textarea id="redact-input" placeholder="Example: Contact John Smith at 555-123-4567 or email john.smith@company.com. Address: 123 Main St, New York, NY 10001"></textarea>
-                </div>
-                <button class="demo-btn" onclick="runDemo('redact')">🔒 Redact PII</button>
-            </div>
-
-            <div id="report-tab" class="tab-content" style="display: none;">
-                <div class="input-group">
-                    <label>Enter incident data for report generation:</label>
-                    <textarea id="report-input" placeholder="Example: Multiple failed login attempts from IP 192.168.1.100 detected over 24 hours. User attempted to access restricted database tables. Suspicious file download activity observed."></textarea>
-                </div>
-                <button class="demo-btn" onclick="runDemo('report')">📊 Generate Report</button>
-            </div>
-
-            <div id="drill-tab" class="tab-content" style="display: none;">
-                <div class="input-group">
-                    <label>Enter drill scenario to simulate:</label>
-                    <textarea id="drill-input" placeholder="Example: Simulate ransomware attack on employee workstations with lateral movement across network segments. Include phishing email vector and credential theft."></textarea>
-                </div>
-                <button class="demo-btn" onclick="runDemo('drill')">🎯 Simulate Drill</button>
-            </div>
-
-            <div id="result" class="result-section">
-                <h3>Results:</h3>
-                <div id="result-content" class="result-content"></div>
-            </div>
-        </div>
-
-        <!-- Pricing Section -->
-        <div class="pricing-section">
-            <h2>💰 Choose Your Plan</h2>
-            <div class="pricing-cards">
-                <div class="pricing-card">
-                    <h3>Starter</h3>
-                    <div class="price">$9.99<span>/mo</span></div>
-                    <ul>
-                        <li>500 API requests/month</li>
-                        <li>All 4 endpoints</li>
-                        <li>FERPA-compliant</li>
-                        <li>Email support</li>
-                        <li>7-day free trial</li>
-                    </ul>
-                    <button class="buy-btn" onclick="purchase('starter')">Start Free Trial</button>
+            <div class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Analysis Types</div>
+                    <div class="nav-item active" onclick="switchMode('analyze')" data-mode="analyze">
+                        <span class="icon">🔍</span>
+                        <span>Threat Analysis</span>
+                    </div>
+                    <div class="nav-item" onclick="switchMode('redact')" data-mode="redact">
+                        <span class="icon">🔒</span>
+                        <span>PII Redaction</span>
+                    </div>
+                    <div class="nav-item" onclick="switchMode('report')" data-mode="report">
+                        <span class="icon">📊</span>
+                        <span>Generate Report</span>
+                    </div>
+                    <div class="nav-item" onclick="switchMode('drill')" data-mode="drill">
+                        <span class="icon">🎯</span>
+                        <span>Simulate Drill</span>
+                    </div>
                 </div>
 
-                <div class="pricing-card featured">
-                    <h3>Professional</h3>
-                    <div class="price">$49.99<span>/mo</span></div>
-                    <ul>
-                        <li>5,000 API requests/month</li>
-                        <li>All 4 endpoints</li>
-                        <li>FERPA-compliant</li>
-                        <li>Priority support</li>
-                        <li>30-day free trial</li>
-                        <li>Custom integrations</li>
-                    </ul>
-                    <button class="buy-btn" onclick="purchase('pro')">Start Free Trial</button>
+                <div class="nav-section">
+                    <div class="nav-section-title">Recent Conversations</div>
+                    <div class="nav-item" onclick="alert('Feature coming soon!')">
+                        <span class="icon">💬</span>
+                        <span>Previous Analysis</span>
+                    </div>
                 </div>
+            </div>
 
-                <div class="pricing-card">
-                    <h3>Enterprise</h3>
-                    <div class="price">Custom</div>
-                    <ul>
-                        <li>Unlimited requests</li>
-                        <li>All features</li>
-                        <li>Dedicated support</li>
-                        <li>Custom deployment</li>
-                        <li>SLA guarantee</li>
-                        <li>On-premise option</li>
-                    </ul>
-                    <button class="buy-btn" onclick="purchase('enterprise')">Contact Sales</button>
+            <div class="sidebar-footer">
+                <div class="user-info" onclick="alert('Profile settings coming soon!')">
+                    <div class="user-avatar">TA</div>
+                    <div class="user-details">
+                        <div class="user-name">Demo User</div>
+                        <div class="user-plan">Free Trial</div>
+                    </div>
+                    <span style="color: #666;">⚙️</span>
                 </div>
             </div>
         </div>
 
-        <div class="footer">
-            <p>&copy; 2025 Threatalytics AI. Powered by AWS & GPT-4. Secure. Compliant. Reliable.</p>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <h1>🛡️ Threatalytics AI</h1>
+                    <span class="mode-badge" id="modeBadge">Threat Analysis</span>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-icon">🛡️</div>
+                    <h2>Welcome to Threatalytics AI</h2>
+                    <p>Advanced threat analysis powered by GPT-4. Choose an analysis type and start your conversation.</p>
+                    
+                    <div class="suggestion-cards">
+                        <div class="suggestion-card" onclick="useSuggestion('Analyze suspicious login attempts from multiple IP addresses with failed authentication patterns.')">
+                            <div class="suggestion-card-title">🔍 Analyze Threat</div>
+                            <div class="suggestion-card-text">Detect behavioral threat indicators</div>
+                        </div>
+                        <div class="suggestion-card" onclick="useSuggestion('Redact all PII from: John Smith contacted me at john.smith@email.com')">
+                            <div class="suggestion-card-title">🔒 Redact PII</div>
+                            <div class="suggestion-card-text">Remove personal information</div>
+                        </div>
+                        <div class="suggestion-card" onclick="useSuggestion('Generate a comprehensive report on recent security incidents')">
+                            <div class="suggestion-card-title">📊 Generate Report</div>
+                            <div class="suggestion-card-text">Create detailed analysis reports</div>
+                        </div>
+                        <div class="suggestion-card" onclick="useSuggestion('Simulate a ransomware attack drill scenario')">
+                            <div class="suggestion-card-title">🎯 Simulate Drill</div>
+                            <div class="suggestion-card-text">Practice threat response</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <textarea 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Type your message here..."
+                        rows="1"
+                        onkeydown="handleKeyPress(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <button class="send-button" id="sendButton" onclick="sendMessage()">
+                        <span>➤</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // API Configuration - Direct to production API
+        // API Configuration
         const API_BASE_URL = 'https://api.threatalyticsai.com';
-        // const API_BASE_URL = 'http://localhost:3000/api';
-        const API_KEY = 'TTWy409iie9ozE5vIW5rOhZSe3ZC3OU4hYDjQJOd'; // Demo API key
+        const API_KEY = 'TTWy409iie9ozE5vIW5rOhZSe3ZC3OU4hYDjQJOd';
 
-        let currentTab = 'analyze';
+        let currentMode = 'analyze';
+        let conversationHistory = [];
 
-        function switchTab(tab) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.style.display = 'none';
+        // Mode configurations
+        const modeConfig = {
+            'analyze': {
+                title: 'Threat Analysis',
+                endpoint: '/analyze',
+                icon: '🔍',
+                placeholder: 'Describe the threat scenario or behavioral data you want to analyze...'
+            },
+            'redact': {
+                title: 'PII Redaction',
+                endpoint: '/redact',
+                icon: '🔒',
+                placeholder: 'Enter text containing PII that needs to be redacted...'
+            },
+            'report': {
+                title: 'Generate Report',
+                endpoint: '/generate-report',
+                icon: '📊',
+                placeholder: 'Provide incident data for report generation...'
+            },
+            'drill': {
+                title: 'Simulate Drill',
+                endpoint: '/simulate-drill',
+                icon: '🎯',
+                placeholder: 'Describe the drill scenario you want to simulate...'
+            }
+        };
+
+        // Switch analysis mode
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update sidebar active state
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.mode === mode) {
+                    item.classList.add('active');
+                }
             });
 
-            // Remove active class from all buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            // Update mode badge
+            const config = modeConfig[mode];
+            document.getElementById('modeBadge').textContent = config.title;
+            
+            // Update input placeholder
+            document.getElementById('chatInput').placeholder = config.placeholder;
 
-            // Show selected tab
-            document.getElementById(`${tab}-tab`).style.display = 'block';
-            event.target.classList.add('active');
-            currentTab = tab;
-
-            // Hide results
-            document.getElementById('result').classList.remove('show');
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
         }
 
-        async function runDemo(endpoint) {
-            const inputElement = document.getElementById(`${endpoint}-input`);
-            const resultSection = document.getElementById('result');
-            const resultContent = document.getElementById('result-content');
-            const button = event.target;
+        // Toggle sidebar for mobile
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
 
-            // Get input
-            const inputText = inputElement.value.trim();
-            if (!inputText) {
-                alert('Please enter some text to analyze');
-                return;
+        // Start new chat
+        function newChat() {
+            conversationHistory = [];
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-icon">🛡️</div>
+                    <h2>Welcome to Threatalytics AI</h2>
+                    <p>Advanced threat analysis powered by GPT-4. Choose an analysis type and start your conversation.</p>
+                    
+                    <div class="suggestion-cards">
+                        <div class="suggestion-card" onclick="useSuggestion('Analyze suspicious login attempts from multiple IP addresses with failed authentication patterns.')">
+                            <div class="suggestion-card-title">🔍 Analyze Threat</div>
+                            <div class="suggestion-card-text">Detect behavioral threat indicators</div>
+                        </div>
+                        <div class="suggestion-card" onclick="useSuggestion('Redact all PII from: John Smith contacted me at john.smith@email.com')">
+                            <div class="suggestion-card-title">🔒 Redact PII</div>
+                            <div class="suggestion-card-text">Remove personal information</div>
+                        </div>
+                        <div class="suggestion-card" onclick="useSuggestion('Generate a comprehensive report on recent security incidents')">
+                            <div class="suggestion-card-title">📊 Generate Report</div>
+                            <div class="suggestion-card-text">Create detailed analysis reports</div>
+                        </div>
+                        <div class="suggestion-card" onclick="useSuggestion('Simulate a ransomware attack drill scenario')">
+                            <div class="suggestion-card-title">🎯 Simulate Drill</div>
+                            <div class="suggestion-card-text">Practice threat response</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('chatInput').value = '';
+        }
+
+        // Use suggestion
+        function useSuggestion(text) {
+            document.getElementById('chatInput').value = text;
+            document.getElementById('chatInput').focus();
+            sendMessage();
+        }
+
+        // Auto-resize textarea
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+        }
+
+        // Handle key press
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Format AI response with better styling
+        function formatResponse(text) {
+            // Escape HTML first
+            text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            // Format headers (##, ###)
+            text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            text = text.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+            text = text.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+            
+            // Format bold text (**text** or __text__)
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
+            
+            // Format italic text (*text* or _text_)
+            text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            text = text.replace(/_(.+?)_/g, '<em>$1</em>');
+            
+            // Format inline code (`code`)
+            text = text.replace(/`(.+?)`/g, '<code>$1</code>');
+            
+            // Format code blocks (```code```)
+            text = text.replace(/```([\s\S]+?)```/g, '<pre>$1</pre>');
+            
+            // Format bullet points (- or *)
+            text = text.replace(/^[•\-\*] (.+)$/gm, '<li>$1</li>');
+            if (text.includes('<li>')) {
+                text = text.replace(/(<li>[\s\S]+<\/li>)/g, '<ul>$1</ul>');
+                // Clean up multiple ul tags
+                text = text.replace(/<\/ul>\s*<ul>/g, '');
+            }
+            
+            // Format numbered lists (1. 2. etc)
+            text = text.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+            
+            // Format threat indicators with badges
+            text = text.replace(/\[HIGH CONCERN\]/gi, '<span class="threat-badge threat-high">HIGH CONCERN</span>');
+            text = text.replace(/\[MEDIUM CONCERN\]/gi, '<span class="threat-badge threat-medium">MEDIUM CONCERN</span>');
+            text = text.replace(/\[LOW CONCERN\]/gi, '<span class="threat-badge threat-low">LOW CONCERN</span>');
+            
+            // Format special sections
+            text = text.replace(/\*\*Observable Behaviors:\*\*/g, '<div class="info-box"><div class="info-box-title">🔍 Observable Behaviors</div>');
+            text = text.replace(/\*\*Threat Response Scoring \(TRS\):\*\*/g, '</div><div class="info-box"><div class="info-box-title">📊 Threat Response Scoring (TRS)</div>');
+            text = text.replace(/\*\*Next Steps:\*\*/g, '</div><div class="info-box"><div class="info-box-title">✅ Next Steps</div>');
+            text = text.replace(/\*\*Disclaimer:\*\*/g, '</div><div class="info-box"><div class="info-box-title">⚠️ Disclaimer</div>');
+            
+            // Close any open info boxes
+            if (text.includes('<div class="info-box">')) {
+                text += '</div>';
+            }
+            
+            // Format line breaks
+            text = text.replace(/\n\n/g, '</p><p>');
+            text = '<p>' + text + '</p>';
+            
+            // Clean up empty paragraphs
+            text = text.replace(/<p>\s*<\/p>/g, '');
+            text = text.replace(/<p>\s*<h/g, '<h');
+            text = text.replace(/<\/h[123]>\s*<\/p>/g, '</h3>');
+            text = text.replace(/<p>\s*<div/g, '<div');
+            text = text.replace(/<\/div>\s*<\/p>/g, '</div>');
+            text = text.replace(/<p>\s*<ul>/g, '<ul>');
+            text = text.replace(/<\/ul>\s*<\/p>/g, '</ul>');
+            
+            return text;
+        }
+
+        // Add message to chat
+        function addMessage(content, isUser = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            // Remove empty state on first message
+            const emptyState = document.getElementById('emptyState');
+            if (emptyState) {
+                emptyState.remove();
             }
 
-            // Show loading
-            button.disabled = true;
-            button.textContent = 'Processing...';
-            resultSection.classList.add('show');
-            resultContent.className = 'result-content';
-            resultContent.textContent = '🔄 Analyzing with GPT-4... Please wait...';
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const avatarClass = isUser ? 'user-avatar-msg' : 'ai-avatar-msg';
+            const avatarIcon = isUser ? '👤' : '🛡️';
+            
+            // Format content if it's an AI message
+            const formattedContent = isUser ? content : formatResponse(content);
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar ${avatarClass}">
+                    ${avatarIcon}
+                </div>
+                <div class="message-content">
+                    ${formattedContent}
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            const chatMessages = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="message-avatar ai-avatar-msg">🛡️</div>
+                <div class="typing-indicator show">
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Disable input
+            input.disabled = true;
+            document.getElementById('sendButton').disabled = true;
+
+            // Add user message
+            addMessage(message, true);
+            
+            // Clear input
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Show typing indicator
+            showTypingIndicator();
 
             try {
-                // Determine endpoint URL and body
-                let url, body;
-                switch(endpoint) {
+                const config = modeConfig[currentMode];
+                let requestBody = {};
+                
+                // Prepare request body based on mode
+                switch(currentMode) {
                     case 'analyze':
-                        url = `${API_BASE_URL}/analyze`;
-                        body = { text: inputText };
-                        break;
                     case 'redact':
-                        url = `${API_BASE_URL}/redact`;
-                        body = { text: inputText };
+                        requestBody = { text: message };
                         break;
                     case 'report':
-                        url = `${API_BASE_URL}/generate-report`;
-                        body = { data: inputText };
+                        requestBody = { data: message };
                         break;
                     case 'drill':
-                        url = `${API_BASE_URL}/simulate-drill`;
-                        body = { scenario: inputText };
+                        requestBody = { scenario: message };
                         break;
                 }
 
                 // Make API call
-                const response = await fetch(url, {
+                const response = await fetch(API_BASE_URL + config.endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'x-api-key': API_KEY
                     },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify(requestBody)
                 });
 
                 const data = await response.json();
 
-                // Display results
+                // Hide typing indicator
+                hideTypingIndicator();
+
+                // Display AI response
                 if (response.ok) {
                     let result = '';
                     if (data.analysis) result = data.analysis;
@@ -539,40 +1018,26 @@
                     else if (data.simulation) result = data.simulation;
                     else result = JSON.stringify(data, null, 2);
 
-                    resultContent.textContent = result;
+                    addMessage(result, false);
                 } else {
                     throw new Error(data.message || 'API request failed');
                 }
 
             } catch (error) {
-                resultContent.className = 'result-content error';
-                resultContent.textContent = `❌ Error: ${error.message}\n\nPlease try again or contact support.`;
+                hideTypingIndicator();
+                addMessage(`<div style="color: #ff4444;">❌ Error: ${error.message}<br><br>Please try again or contact support.</div>`, false);
             } finally {
-                // Reset button
-                button.disabled = false;
-                const buttonTexts = {
-                    'analyze': '🔍 Analyze Threat',
-                    'redact': '🔒 Redact PII',
-                    'report': '📊 Generate Report',
-                    'drill': '🎯 Simulate Drill'
-                };
-                button.textContent = buttonTexts[endpoint];
+                // Re-enable input
+                input.disabled = false;
+                document.getElementById('sendButton').disabled = false;
+                input.focus();
             }
         }
 
-        function purchase(plan) {
-            // Redirect to Stripe checkout or contact form
-            const messages = {
-                'starter': 'Redirecting to Starter plan checkout (7-day free trial)...',
-                'pro': 'Redirecting to Professional plan checkout (30-day free trial)...',
-                'enterprise': 'Redirecting to enterprise contact form...'
-            };
-            
-            alert(messages[plan] + '\n\nNote: Integration with Stripe checkout coming soon. Please contact sales@threatalyticsai.com');
-            
-            // TODO: Integrate with Stripe Checkout
-            // window.location.href = `https://checkout.stripe.com/...`;
-        }
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('chatInput').focus();
+        });
     </script>
 </body>
 </html>
