@@ -595,9 +595,216 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #4d4d4d;
         }
+
+        /* Authentication Modal */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-modal.show {
+            display: flex;
+        }
+
+        .auth-modal-content {
+            background: #2d2d2d;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid #3d3d3d;
+        }
+
+        .auth-modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-modal-header h2 {
+            color: #e0e0e0;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .auth-modal-header p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 2px solid #3d3d3d;
+            border-radius: 8px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .auth-tab.active {
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
+            border-color: #ff7b1c;
+            color: white;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #e0e0e0;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #1a1a1a;
+            border: 2px solid #3d3d3d;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #ff7b1c;
+            background: #242424;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(216, 90, 0, 0.5);
+        }
+
+        .auth-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .auth-error {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid #ff4444;
+            color: #ff8888;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .auth-error.show {
+            display: block;
+        }
+
+        .auth-success {
+            background: rgba(76, 217, 100, 0.2);
+            border: 1px solid #4cd964;
+            color: #4cd964;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .auth-success.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
+    <!-- Authentication Modal -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h2>🛡️ Threatalytics AI</h2>
+                <p>Sign in to access your threat analysis dashboard</p>
+            </div>
+
+            <div class="auth-tabs">
+                <div class="auth-tab active" onclick="switchAuthTab('login')">Login</div>
+                <div class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</div>
+            </div>
+
+            <div class="auth-error" id="authError"></div>
+            <div class="auth-success" id="authSuccess"></div>
+
+            <!-- Login Form -->
+            <form class="auth-form active" id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="auth-btn" id="loginBtn">Login</button>
+            </form>
+
+            <!-- Signup Form -->
+            <form class="auth-form" id="signupForm" onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="signupName" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" required placeholder="••••••••" minlength="8">
+                    <small style="color:#888; font-size:12px; margin-top:4px; display:block;">Minimum 8 characters, include uppercase, lowercase, and numbers</small>
+                </div>
+                <button type="submit" class="auth-btn" id="signupBtn">Create Account</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Mobile Menu Button -->
     <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
 
@@ -642,7 +849,7 @@
             </div>
 
             <div class="sidebar-footer">
-                <div class="user-info" onclick="alert('Profile settings coming soon!')">
+                <div class="user-info" onclick="showUserMenu()">
                     <div class="user-avatar">TA</div>
                     <div class="user-details">
                         <div class="user-name">Demo User</div>
@@ -650,6 +857,7 @@
                     </div>
                     <span style="color: #666;">⚙️</span>
                 </div>
+                <button style="width:100%; margin-top:10px; padding:8px; background:#3d3d3d; color:#ff4444; border:none; border-radius:6px; cursor:pointer; font-size:13px;" onclick="authManager.logout()">Logout</button>
             </div>
         </div>
 
@@ -708,13 +916,220 @@
         </div>
     </div>
 
+    <!-- Include Authentication Script -->
+    <script src="auth.js"></script>
+
     <script>
+        // Authentication UI Functions
+        function switchAuthTab(tab) {
+            // Update tabs
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update forms
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            document.getElementById(tab + 'Form').classList.add('active');
+
+            // Clear messages
+            hideAuthMessages();
+        }
+
+        function hideAuthMessages() {
+            document.getElementById('authError').classList.remove('show');
+            document.getElementById('authSuccess').classList.remove('show');
+        }
+
+        function showAuthError(message) {
+            const errorEl = document.getElementById('authError');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            document.getElementById('authSuccess').classList.remove('show');
+        }
+
+        function showAuthSuccess(message) {
+            const successEl = document.getElementById('authSuccess');
+            successEl.textContent = message;
+            successEl.classList.add('show');
+            document.getElementById('authError').classList.remove('show');
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            hideAuthMessages();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const button = document.getElementById('loginBtn');
+
+            button.disabled = true;
+            button.textContent = 'Logging in...';
+
+            try {
+                await authManager.login(email, password);
+                showAuthSuccess('Login successful! Redirecting...');
+                setTimeout(() => window.location.reload(), 1000);
+            } catch (error) {
+                showAuthError(error.message || 'Login failed. Please try again.');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Login';
+            }
+        }
+
+        async function handleSignup(event) {
+            event.preventDefault();
+            hideAuthMessages();
+
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const button = document.getElementById('signupBtn');
+
+            button.disabled = true;
+            button.textContent = 'Creating account...';
+
+            try {
+                await authManager.signup(email, password, name);
+                showAuthSuccess('Account created! Please check your email to verify your account, then login.');
+                
+                // Switch to login tab after 3 seconds
+                setTimeout(() => {
+                    document.querySelector('.auth-tab:first-child').click();
+                    document.getElementById('loginEmail').value = email;
+                }, 3000);
+            } catch (error) {
+                showAuthError(error.message || 'Signup failed. Please try again.');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Create Account';
+            }
+        }
+
+        function showUserMenu() {
+            // TODO: Implement user menu
+            alert('User settings coming soon!');
+        }
+
         // API Configuration
         const API_BASE_URL = 'https://api.threatalyticsai.com';
         const API_KEY = 'TTWy409iie9ozE5vIW5rOhZSe3ZC3OU4hYDjQJOd';
 
         let currentMode = 'analyze';
+        let currentConversationId = null;
         let conversationHistory = [];
+        
+        // Load conversations on startup
+        async function loadConversations() {
+            if (!authManager.isAuthenticated()) return;
+            
+            try {
+                const response = await fetch(`https://authapi.threatalyticsai.com/conversations`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authManager.getAccessToken()}`
+                    }
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    updateConversationsList(data.conversations || []);
+                }
+            } catch (error) {
+                console.error('Failed to load conversations:', error);
+            }
+        }
+
+        // Update conversations list in sidebar
+        function updateConversationsList(conversations) {
+            const container = document.getElementById('conversationsList');
+            if (!container) return;
+
+            container.innerHTML = '';
+            
+            if (conversations.length === 0) {
+                container.innerHTML = `
+                    <div class="nav-item">
+                        <span style="color: #666;">No conversations yet</span>
+                    </div>
+                `;
+                return;
+            }
+
+            conversations.forEach(conv => {
+                const item = document.createElement('div');
+                item.className = 'nav-item';
+                if (conv.conversation_id === currentConversationId) {
+                    item.classList.add('active');
+                }
+                
+                item.innerHTML = `
+                    <span class="icon">${getModeIcon(conv.mode)}</span>
+                    <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${conv.title}</span>
+                    <span class="delete-conv" onclick="deleteConversation('${conv.conversation_id}')">&times;</span>
+                `;
+                
+                item.onclick = (e) => {
+                    if (!e.target.classList.contains('delete-conv')) {
+                        loadConversation(conv);
+                    }
+                };
+                
+                container.appendChild(item);
+            });
+        }
+
+        // Get icon for conversation mode
+        function getModeIcon(mode) {
+            const icons = {
+                'analyze': '🔍',
+                'redact': '🔒',
+                'report': '📊',
+                'drill': '🎯'
+            };
+            return icons[mode] || '💬';
+        }
+
+        // Load a specific conversation
+        async function loadConversation(conversation) {
+            currentConversationId = conversation.conversation_id;
+            currentMode = conversation.mode;
+            conversationHistory = conversation.messages || [];
+            
+            // Update UI
+            switchMode(conversation.mode);
+            document.getElementById('chatMessages').innerHTML = '';
+            
+            // Replay messages
+            conversationHistory.forEach(msg => {
+                addMessage(msg.content, msg.role === 'user');
+            });
+            
+            // Update active state in sidebar
+            updateConversationsList(await loadConversations());
+        }
+
+        // Delete a conversation
+        async function deleteConversation(conversationId) {
+            if (!confirm('Are you sure you want to delete this conversation?')) return;
+            
+            try {
+                const response = await fetch(`https://authapi.threatalyticsai.com/conversations/${conversationId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authManager.getAccessToken()}`
+                    }
+                });
+                
+                if (response.ok) {
+                    if (conversationId === currentConversationId) {
+                        newChat();
+                    }
+                    await loadConversations();
+                }
+            } catch (error) {
+                console.error('Failed to delete conversation:', error);
+            }
+        }
 
         // Mode configurations
         const modeConfig = {
@@ -966,7 +1381,10 @@
             input.disabled = true;
             document.getElementById('sendButton').disabled = true;
 
-            // Add user message
+            // Add user message to conversation history
+            conversationHistory.push({ role: 'user', content: message });
+            
+            // Add user message to display
             addMessage(message, true);
             
             // Clear input

@@ -12,5 +12,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "devDependencies": {
+    "serverless-offline": "^14.4.0",
+    "serverless-python-requirements": "^6.1.2"
+  }
 }

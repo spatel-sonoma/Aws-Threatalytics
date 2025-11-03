@@ -19,6 +19,12 @@ fi
 echo "🔍 Validating serverless.yml..."
 serverless print
 
+# Copy admin files to Lambda deployment
+echo "📂 Preparing admin files for deployment..."
+mkdir -p .serverless/admin
+cp admin/admin-api.py .serverless/admin/
+cp -r admin/index.html .serverless/admin/
+
 # Deploy to AWS
 echo "🏗️  Deploying to AWS..."
 serverless deploy

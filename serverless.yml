@@ -5,6 +5,14 @@ provider:
   runtime: python3.9
   stage: dev
   region: us-east-1
+  environment:
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, ''}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, ''}
+    USERS_TABLE: ThreatalyticsUsers
+    SUBSCRIPTIONS_TABLE: ThreatalyticsPlans
+    USAGE_TABLE: ThreatalyticsUsage
+    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, ''}
+  
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -16,9 +24,20 @@ provider:
         - dynamodb:GetItem
         - dynamodb:UpdateItem
         - dynamodb:Query
+        - dynamodb:DeleteItem
       Resource:
         - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsUsage"
         - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsPlans"
+        - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsUsers"
+        - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsConversations"
+    - Effect: Allow
+      Action:
+        - cognito-idp:AdminInitiateAuth
+        - cognito-idp:AdminCreateUser
+        - cognito-idp:AdminSetUserPassword
+        - cognito-idp:AdminGetUser
+        - cognito-idp:AdminUserGlobalSignOut
+      Resource: "arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/*"
     - Effect: Allow
       Action:
         - logs:CreateLogGroup
@@ -153,6 +172,52 @@ functions:
           method: post
           cors: true
 
+  # NEW: Authentication endpoint
+  auth:
+    handler: lambda_functions/auth.lambda_handler
+    events:
+      - http:
+          path: /auth
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+
+  # NEW: Conversations endpoint
+  conversations:
+    handler: lambda_functions/conversations.lambda_handler
+    events:
+      - http:
+          path: /conversations
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+      - http:
+          path: /conversations
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+      - http:
+          path: /conversations/{id}
+          method: delete
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+
 resources:
   Resources:
     UsageTable:
@@ -183,6 +248,49 @@ resources:
         KeySchema:
           - AttributeName: user_id
             KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+
+    # NEW: Users Table for authentication
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ThreatalyticsUsers
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: email-index
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+
+    # NEW: Conversations Table
+    ConversationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ThreatalyticsConversations
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: conversation_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+          - AttributeName: conversation_id
+            KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true

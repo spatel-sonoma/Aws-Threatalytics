@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threatalytics Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: #1a1a1a;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #0f0f0f;
+            border-right: 1px solid #2d2d2d;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #2d2d2d;
+            text-align: center;
+        }
+
+        .sidebar-header h1 {
+            color: #e0e0e0;
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .nav-section {
+            padding: 20px;
+        }
+
+        .nav-title {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin: 4px 0;
+            color: #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background: #2d2d2d;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3d3d3d;
+        }
+
+        .stat-title {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            color: #e0e0e0;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+        }
+
+        .change-positive {
+            color: #4cd964;
+        }
+
+        .change-negative {
+            color: #ff3b30;
+        }
+
+        /* Data Tables */
+        .data-section {
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3d3d3d;
+            margin-bottom: 20px;
+        }
+
+        .data-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .data-title {
+            color: #e0e0e0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .data-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #3d3d3d;
+        }
+
+        .data-table th {
+            color: #888;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .data-table td {
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        .data-table tbody tr:hover {
+            background: #333;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #3d3d3d;
+            color: #e0e0e0;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* Charts */
+        .chart-container {
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3d3d3d;
+            margin-bottom: 20px;
+            height: 300px;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: rgba(76, 217, 100, 0.2);
+            color: #4cd964;
+            border: 1px solid #4cd964;
+        }
+
+        .status-trial {
+            background: rgba(255, 149, 0, 0.2);
+            color: #ff9500;
+            border: 1px solid #ff9500;
+        }
+
+        .status-expired {
+            background: rgba(255, 59, 48, 0.2);
+            color: #ff3b30;
+            border: 1px solid #ff3b30;
+        }
+
+        /* Loading State */
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            border: 3px solid #3d3d3d;
+            border-radius: 50%;
+            border-top: 3px solid #ff7b1c;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Export Button */
+        .export-btn {
+            background: #3d3d3d;
+            color: #e0e0e0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-btn:hover {
+            background: #4d4d4d;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>Threatalytics Admin</h1>
+                <p>Management Dashboard</p>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-title">Analytics</div>
+                <div class="nav-item active" onclick="showSection('dashboard')">
+                    📊 Dashboard Overview
+                </div>
+                <div class="nav-item" onclick="showSection('users')">
+                    👥 User Management
+                </div>
+                <div class="nav-item" onclick="showSection('subscriptions')">
+                    💳 Subscription Data
+                </div>
+                <div class="nav-item" onclick="showSection('api')">
+                    🔑 API Usage
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-title">Reports</div>
+                <div class="nav-item" onclick="showSection('revenue')">
+                    📈 Revenue Analytics
+                </div>
+                <div class="nav-item" onclick="showSection('usage')">
+                    📊 Usage Analytics
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-title">Settings</div>
+                <div class="nav-item" onclick="showSection('stripe')">
+                    💳 Stripe Settings
+                </div>
+                <div class="nav-item" onclick="showSection('admin')">
+                    👤 Admin Users
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="content-section">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">Total Users</div>
+                        <div class="stat-value">2,547</div>
+                        <div class="stat-change change-positive">+12% this month</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-title">Monthly Revenue</div>
+                        <div class="stat-value">$15,820</div>
+                        <div class="stat-change change-positive">+8% vs last month</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-title">Active Subscriptions</div>
+                        <div class="stat-value">1,832</div>
+                        <div class="stat-change change-positive">+5% this month</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-title">API Calls (24h)</div>
+                        <div class="stat-value">124,568</div>
+                        <div class="stat-change change-negative">-3% vs yesterday</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div style="display: flex; gap: 20px;">
+                    <div class="chart-container" style="flex: 1;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="chart-container" style="flex: 1;">
+                        <canvas id="usageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Section -->
+            <div id="users-section" class="content-section" style="display: none;">
+                <div class="data-section">
+                    <div class="data-header">
+                        <div class="data-title">User Management</div>
+                        <div class="data-actions">
+                            <button class="export-btn" onclick="exportUsers()">
+                                📥 Export CSV
+                            </button>
+                            <button class="btn btn-primary" onclick="showAddUserModal()">
+                                + Add User
+                            </button>
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Plan</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                                <th>Last Active</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Users will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Subscriptions Section -->
+            <div id="subscriptions-section" class="content-section" style="display: none;">
+                <div class="data-section">
+                    <div class="data-header">
+                        <div class="data-title">Subscription Management</div>
+                        <div class="data-actions">
+                            <button class="btn btn-primary">
+                                + Create Plan
+                            </button>
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Plan Name</th>
+                                <th>Price</th>
+                                <th>Active Users</th>
+                                <th>Revenue</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Basic</td>
+                                <td>$29/month</td>
+                                <td>856</td>
+                                <td>$24,824</td>
+                                <td><button class="btn btn-secondary">Edit</button></td>
+                            </tr>
+                            <tr>
+                                <td>Professional</td>
+                                <td>$99/month</td>
+                                <td>642</td>
+                                <td>$63,558</td>
+                                <td><button class="btn btn-secondary">Edit</button></td>
+                            </tr>
+                            <tr>
+                                <td>Enterprise</td>
+                                <td>$499/month</td>
+                                <td>334</td>
+                                <td>$166,666</td>
+                                <td><button class="btn btn-secondary">Edit</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- API Usage Section -->
+            <div id="api-section" class="content-section" style="display: none;">
+                <div class="data-section">
+                    <div class="data-header">
+                        <div class="data-title">API Usage Analytics</div>
+                        <div class="data-actions">
+                            <button class="export-btn">
+                                📥 Export Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="apiUsageChart"></canvas>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Endpoint</th>
+                                <th>Calls (24h)</th>
+                                <th>Success Rate</th>
+                                <th>Avg Response Time</th>
+                                <th>Error Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>/api/analyze</td>
+                                <td>45,678</td>
+                                <td>99.8%</td>
+                                <td>245ms</td>
+                                <td>0.2%</td>
+                            </tr>
+                            <tr>
+                                <td>/api/redact</td>
+                                <td>34,567</td>
+                                <td>99.9%</td>
+                                <td>189ms</td>
+                                <td>0.1%</td>
+                            </tr>
+                            <tr>
+                                <td>/api/report</td>
+                                <td>23,456</td>
+                                <td>99.7%</td>
+                                <td>312ms</td>
+                                <td>0.3%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Revenue Analytics Section -->
+            <div id="revenue-section" class="content-section" style="display: none;">
+                <div class="data-section">
+                    <div class="data-header">
+                        <div class="data-title">Revenue Analytics</div>
+                        <div class="data-actions">
+                            <button class="export-btn">
+                                📥 Export Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="revenueAnalyticsChart"></canvas>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="stat-title">MRR</div>
+                            <div class="stat-value">$256,248</div>
+                            <div class="stat-change change-positive">+8% vs last month</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">ARR</div>
+                            <div class="stat-value">$3,074,976</div>
+                            <div class="stat-change change-positive">+12% this year</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">Churn Rate</div>
+                            <div class="stat-value">2.1%</div>
+                            <div class="stat-change change-negative">+0.3% vs last month</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">LTV</div>
+                            <div class="stat-value">$1,245</div>
+                            <div class="stat-change change-positive">+5% vs last quarter</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usage Analytics Section -->
+            <div id="usage-section" class="content-section" style="display: none;">
+                <div class="data-section">
+                    <div class="data-header">
+                        <div class="data-title">Usage Analytics</div>
+                        <div class="data-actions">
+                            <button class="export-btn">
+                                📥 Export Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="usageAnalyticsChart"></canvas>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Usage Count</th>
+                                <th>Active Users</th>
+                                <th>Growth</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Threat Analysis</td>
+                                <td>256,789</td>
+                                <td>1,245</td>
+                                <td>+15%</td>
+                                <td>📈</td>
+                            </tr>
+                            <tr>
+                                <td>Data Redaction</td>
+                                <td>198,456</td>
+                                <td>987</td>
+                                <td>+8%</td>
+                                <td>📈</td>
+                            </tr>
+                            <tr>
+                                <td>Report Generation</td>
+                                <td>145,678</td>
+                                <td>876</td>
+                                <td>+12%</td>
+                                <td>📈</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Stripe Settings Section -->
+            <div id="stripe-section" class="content-section" style="display: none;">
+                <div class="data-section">
+                    <div class="data-header">
+                        <div class="data-title">Stripe Configuration</div>
+                    </div>
+
+                    <div style="padding: 20px;">
+                        <div style="margin-bottom: 20px;">
+                            <h3 style="color: #e0e0e0; margin-bottom: 10px;">Webhook Status</h3>
+                            <div class="status-badge status-active">Active</div>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <h3 style="color: #e0e0e0; margin-bottom: 10px;">API Keys</h3>
+                            <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                <div style="color: #888;">Publishable Key</div>
+                                <div style="color: #e0e0e0; font-family: monospace;">pk_test_***********************</div>
+                            </div>
+                            <div style="background: #1a1a1a; padding: 15px; border-radius: 8px;">
+                                <div style="color: #888;">Secret Key</div>
+                                <div style="color: #e0e0e0; font-family: monospace;">sk_test_***********************</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <h3 style="color: #e0e0e0; margin-bottom: 10px;">Webhook Endpoints</h3>
+                            <div style="background: #1a1a1a; padding: 15px; border-radius: 8px;">
+                                <div style="color: #888;">Production Endpoint</div>
+                                <div style="color: #e0e0e0; font-family: monospace;">https://api.threatalytics.com/webhook</div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary">Update Configuration</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Users Section -->
+            <div id="admin-section" class="content-section" style="display: none;">
+                <div class="data-section">
+                    <div class="data-header">
+                        <div class="data-title">Admin Users</div>
+                        <div class="data-actions">
+                            <button class="btn btn-primary">
+                                + Add Admin
+                            </button>
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>John Admin</td>
+                                <td>john@threatalytics.com</td>
+                                <td>Super Admin</td>
+                                <td>2 hours ago</td>
+                                <td>
+                                    <button class="btn btn-secondary">Edit</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Sarah Manager</td>
+                                <td>sarah@threatalytics.com</td>
+                                <td>Manager</td>
+                                <td>1 day ago</td>
+                                <td>
+                                    <button class="btn btn-secondary">Edit</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Mike Support</td>
+                                <td>mike@threatalytics.com</td>
+                                <td>Support</td>
+                                <td>3 hours ago</td>
+                                <td>
+                                    <button class="btn btn-secondary">Edit</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Initialize Charts
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            loadUsers();
+            // Show dashboard by default
+            showSection('dashboard');
+        });
+
+        function initializeCharts() {
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'],
+                    datasets: [{
+                        label: 'Monthly Revenue',
+                        data: [12500, 13200, 14800, 14100, 15500, 15820],
+                        borderColor: '#ff7b1c',
+                        tension: 0.4,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#e0e0e0'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Usage Chart
+            const usageCtx = document.getElementById('usageChart').getContext('2d');
+            new Chart(usageCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'API Calls',
+                        data: [115000, 125000, 118000, 132000, 128000, 124568, 98000],
+                        backgroundColor: '#ff7b1c'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#e0e0e0'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initialize other charts when needed
+            if (document.getElementById('apiUsageChart')) {
+                initializeAPIUsageChart();
+            }
+            if (document.getElementById('revenueAnalyticsChart')) {
+                initializeRevenueAnalyticsChart();
+            }
+            if (document.getElementById('usageAnalyticsChart')) {
+                initializeUsageAnalyticsChart();
+            }
+        }
+
+        function initializeAPIUsageChart() {
+            const ctx = document.getElementById('apiUsageChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: 'API Calls per Hour',
+                        data: [5200, 3800, 8500, 12000, 9800, 6500],
+                        borderColor: '#ff7b1c',
+                        tension: 0.4,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { color: '#e0e0e0' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#3d3d3d' },
+                            ticks: { color: '#e0e0e0' }
+                        },
+                        x: {
+                            grid: { color: '#3d3d3d' },
+                            ticks: { color: '#e0e0e0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeRevenueAnalyticsChart() {
+            const ctx = document.getElementById('revenueAnalyticsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Revenue',
+                        data: [180000, 195000, 210000, 225000, 235000, 242000, 248000, 252000, 256000, 260000, 265000, 270000],
+                        borderColor: '#ff7b1c',
+                        tension: 0.4,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { color: '#e0e0e0' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#3d3d3d' },
+                            ticks: { color: '#e0e0e0' }
+                        },
+                        x: {
+                            grid: { color: '#3d3d3d' },
+                            ticks: { color: '#e0e0e0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeUsageAnalyticsChart() {
+            const ctx = document.getElementById('usageAnalyticsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Threat Analysis', 'Data Redaction', 'Report Generation'],
+                    datasets: [{
+                        label: 'Feature Usage',
+                        data: [256789, 198456, 145678],
+                        backgroundColor: '#ff7b1c'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { color: '#e0e0e0' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#3d3d3d' },
+                            ticks: { color: '#e0e0e0' }
+                        },
+                        x: {
+                            grid: { color: '#3d3d3d' },
+                            ticks: { color: '#e0e0e0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/admin/users');
+                const data = await response.json();
+                updateUsersTable(data.users);
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        function updateUsersTable(users) {
+            const tbody = document.getElementById('users-table-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.email}</td>
+                    <td>${user.plan}</td>
+                    <td><span class="status-badge status-${user.status.toLowerCase()}">${user.status}</span></td>
+                    <td>${new Date(user.joined).toLocaleDateString()}</td>
+                    <td>${user.lastActive}</td>
+                    <td><button class="btn btn-secondary" onclick="editUser('${user.id}')">Edit</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function showSection(section) {
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Add active class to clicked nav item
+            document.querySelector(`.nav-item[onclick="showSection('${section}')"]`).classList.add('active');
+
+            // Hide all content sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Show the selected section
+            const selectedSection = document.getElementById(`${section}-section`);
+            if (selectedSection) {
+                selectedSection.style.display = 'block';
+
+                // Initialize charts if needed
+                if (section === 'api' && document.getElementById('apiUsageChart')) {
+                    initializeAPIUsageChart();
+                } else if (section === 'revenue' && document.getElementById('revenueAnalyticsChart')) {
+                    initializeRevenueAnalyticsChart();
+                } else if (section === 'usage' && document.getElementById('usageAnalyticsChart')) {
+                    initializeUsageAnalyticsChart();
+                }
+            }
+        }
+
+        async function exportUsers() {
+            try {
+                const response = await fetch('/api/admin/export-users');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'users.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error exporting users:', error);
+                alert('Failed to export users. Please try again.');
+            }
+        }
+
+        function showAddUserModal() {
+            // TODO: Implement add user modal
+            alert('Add user functionality coming soon!');
+        }
+
+        function editUser(userId) {
+            // TODO: Implement edit user modal
+            alert(`Edit user functionality coming soon! User ID: ${userId}`);
+        }
+    </script>
+</body>
+</html>
