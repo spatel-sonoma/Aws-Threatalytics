@@ -17,6 +17,42 @@
             height: 100vh;
             overflow: hidden;
         }
+        
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .notification {
+            color: #fff;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .notification.success {
+            background-color: #28a745;
+        }
+        
+        .notification.error {
+            background-color: #dc3545;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
 
         .app-container {
             display: flex;
@@ -703,6 +739,17 @@
         </div>
     </div>
 
+    <!-- Notifications -->
+    <div id="notification" class="notification" style="display: none; position: fixed; top: 20px; right: 20px; padding: 15px; border-radius: 8px; z-index: 1000;"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 999; display: none;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+            <div class="loading-spinner"></div>
+            <div style="color: #fff; margin-top: 10px;">Loading...</div>
+        </div>
+    </div>
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -932,13 +979,50 @@
             });
         }
 
+        const API_BASE_URL = 'https://api.threatalyticsai.com';
+
+        // Utility functions for UI feedback
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+
         async function loadUsers() {
+            showLoading();
             try {
-                const response = await fetch('/api/admin/users');
+                const response = await fetch(`${API_BASE_URL}/admin/users`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
                 const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load users');
+                }
                 updateUsersTable(data.users);
+                showNotification('Users loaded successfully', 'success');
             } catch (error) {
                 console.error('Error loading users:', error);
+                showNotification(error.message || 'Failed to load users. Please try again.', 'error');
+            } finally {
+                hideLoading();
+                showError('Failed to load users. Please check your connection and try again.');
             }
         }
 

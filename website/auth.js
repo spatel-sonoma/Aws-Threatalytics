@@ -7,7 +7,7 @@ class AuthManager {
         this.init();
     }
 
-    init() {
+    async init() {
         // Check for verification link parameters
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('verify') && urlParams.has('code')) {
@@ -26,8 +26,11 @@ class AuthManager {
             this.tokens = JSON.parse(storedTokens);
             this.updateUI();
             
-            // Check if token needs refresh
-            this.refreshTokenIfNeeded();
+            // Check subscription status and token refresh
+            await Promise.all([
+                this.checkSubscriptionStatus(),
+                this.refreshTokenIfNeeded()
+            ]);
         } else {
             // No stored session, show login modal
             this.showAuthModal();
@@ -576,6 +579,94 @@ class AuthManager {
         }
     }
 
+    async checkSubscriptionStatus() {
+        if (!this.tokens || !this.tokens.access_token) {
+            console.log('No access token available');
+            return null;
+        }
+
+        try {
+            const response = await fetch(`${this.API_BASE_URL}/subscription/status`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.tokens.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch subscription status');
+            }
+
+            const data = await response.json();
+            this.updateSubscriptionUI(data);
+            return data;
+        } catch (error) {
+            console.error('Error checking subscription:', error);
+            return null;
+        }
+    }
+
+    updateSubscriptionUI(subscriptionData) {
+        const subscriptionStatus = document.getElementById('subscription-status');
+        const upgradePlanBtn = document.getElementById('upgrade-plan-btn');
+        
+        if (!subscriptionStatus || !upgradePlanBtn) {
+            console.log('Subscription UI elements not found');
+            return;
+        }
+
+        if (subscriptionData.active) {
+            subscriptionStatus.textContent = `Active Plan: ${subscriptionData.plan}`;
+            subscriptionStatus.className = 'status-badge status-active';
+            upgradePlanBtn.style.display = subscriptionData.plan === 'premium' ? 'none' : 'block';
+        } else {
+            subscriptionStatus.textContent = 'No Active Subscription';
+            subscriptionStatus.className = 'status-badge status-inactive';
+            upgradePlanBtn.style.display = 'block';
+        }
+
+        // Update usage information if available
+        if (subscriptionData.usage) {
+            const usageElement = document.getElementById('api-usage');
+            if (usageElement) {
+                usageElement.textContent = `API Calls: ${subscriptionData.usage.current}/${subscriptionData.usage.limit}`;
+            }
+        }
+    }
+
+    async initiateSubscription(plan) {
+        if (!this.tokens || !this.tokens.access_token) {
+            this.showAuthModal();
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.API_BASE_URL}/subscription/create`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.tokens.access_token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ plan })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create subscription');
+            }
+
+            const data = await response.json();
+            
+            // Redirect to Stripe checkout
+            if (data.checkoutUrl) {
+                window.location.href = data.checkoutUrl;
+            }
+        } catch (error) {
+            console.error('Error creating subscription:', error);
+            this.showError('Failed to initiate subscription. Please try again.');
+        }
+    }
+
     async refreshTokenIfNeeded() {
         const tokenTime = localStorage.getItem('threatalytics_token_time');
         if (!tokenTime) return;
@@ -631,6 +722,32 @@ class AuthManager {
 
     getAccessToken() {
         return this.tokens ? this.tokens.access_token : null;
+    }
+
+    updateUsageUI(usageData) {
+        const currentPlan = document.getElementById('currentPlan');
+        const apiUsage = document.getElementById('apiUsage');
+        const apiLimit = document.getElementById('apiLimit');
+        const usageProgress = document.getElementById('usageProgress');
+        const upgradeBtn = document.querySelector('.upgrade-btn');
+
+        if (currentPlan) {
+            currentPlan.textContent = usageData.plan || 'Free';
+        }
+
+        if (apiUsage && apiLimit) {
+            apiUsage.textContent = usageData.current || 0;
+            apiLimit.textContent = usageData.limit || 100;
+        }
+
+        if (usageProgress) {
+            const percentage = Math.min(((usageData.current || 0) / (usageData.limit || 100)) * 100, 100);
+            usageProgress.style.width = `${percentage}%`;
+        }
+
+        if (upgradeBtn) {
+            upgradeBtn.style.display = usageData.plan === 'premium' ? 'none' : 'block';
+        }
     }
 
     updateUI() {
