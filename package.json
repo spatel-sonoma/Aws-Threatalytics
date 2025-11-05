@@ -16,5 +16,10 @@
   "devDependencies": {
     "serverless-offline": "^14.4.0",
     "serverless-python-requirements": "^6.1.2"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "node-fetch": "^3.3.2"
   }
 }

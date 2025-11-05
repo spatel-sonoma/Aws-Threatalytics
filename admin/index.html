@@ -1012,34 +1012,64 @@
                     }
                 });
                 const data = await response.json();
+                console.log('API Response:', data); // Debug log
+                
                 if (!response.ok) {
                     throw new Error(data.error || 'Failed to load users');
                 }
-                updateUsersTable(data.users);
+                
+                // Handle different response formats
+                const users = data.users || data;
+                console.log('Users array:', users); // Debug log
+                
+                updateUsersTable(users);
                 showNotification('Users loaded successfully', 'success');
             } catch (error) {
                 console.error('Error loading users:', error);
                 showNotification(error.message || 'Failed to load users. Please try again.', 'error');
             } finally {
                 hideLoading();
-                showError('Failed to load users. Please check your connection and try again.');
             }
         }
 
         function updateUsersTable(users) {
             const tbody = document.getElementById('users-table-body');
-            if (!tbody) return;
+            if (!tbody) {
+                console.log('users-table-body not found');
+                return;
+            }
 
-            tbody.innerHTML = users.map(user => `
-                <tr>
-                    <td>${user.email}</td>
-                    <td>${user.plan}</td>
-                    <td><span class="status-badge status-${user.status.toLowerCase()}">${user.status}</span></td>
-                    <td>${new Date(user.joined).toLocaleDateString()}</td>
-                    <td>${user.lastActive}</td>
-                    <td><button class="btn btn-secondary" onclick="editUser('${user.id}')">Edit</button></td>
-                </tr>
-            `).join('');
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #888;">No users found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => {
+                // Map the API response to expected format
+                const email = user.email || 'N/A';
+                const plan = (user.plan || 'free').toUpperCase();
+                const status = user.subscription?.status || user.status || 'active';
+                const joined = user.created_at || user.joined || new Date().toISOString();
+                const lastActive = user.last_active || user.lastActive || 'N/A';
+                const userId = user.user_id || user.id || '';
+
+                return `
+                    <tr>
+                        <td>${email}</td>
+                        <td>${plan}</td>
+                        <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
+                        <td>${new Date(joined).toLocaleDateString()}</td>
+                        <td>${lastActive}</td>
+                        <td><button class="btn btn-secondary" onclick="editUser('${userId}')">Edit</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function editUser(userId) {
+            // Placeholder for edit user functionality
+            console.log('Edit user:', userId);
+            showNotification('Edit user functionality coming soon', 'success');
         }
 
         function showSection(section) {
@@ -1061,8 +1091,10 @@
             if (selectedSection) {
                 selectedSection.style.display = 'block';
 
-                // Initialize charts if needed
-                if (section === 'api' && document.getElementById('apiUsageChart')) {
+                // Load data when switching sections
+                if (section === 'users') {
+                    loadUsers();
+                } else if (section === 'api' && document.getElementById('apiUsageChart')) {
                     initializeAPIUsageChart();
                 } else if (section === 'revenue' && document.getElementById('revenueAnalyticsChart')) {
                     initializeRevenueAnalyticsChart();
