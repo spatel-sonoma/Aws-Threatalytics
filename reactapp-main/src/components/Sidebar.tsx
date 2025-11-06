@@ -1,4 +1,4 @@
-import { PlusCircle, Search, Lock, FileText, Target, History, LogOut, Settings } from "lucide-react";
+import { PlusCircle, Search, Lock, FileText, Target, History, LogOut, Settings, FolderOpen, Rocket, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,7 +41,10 @@ const Sidebar = ({ selectedAnalysis, onSelectAnalysis, onNewAnalysis }: SidebarP
 
   const menuItems = [
     { icon: History, label: "Previous Analysis", action: () => navigate("/history") },
-    { icon: Settings, label: "Admin Dashboard", action: () => navigate("/admin") },
+    { icon: FolderOpen, label: "Case Dashboard", action: () => navigate("/client-dashboard") },
+    { icon: Rocket, label: "Launch Readiness", action: () => navigate("/admin-launch") },
+    { icon: Bot, label: "Policy Assistant", action: () => navigate("/assistant") },
+    // { icon: Settings, label: "Admin Dashboard", action: () => navigate("/admin") },
   ];
 
   return (
@@ -84,6 +87,30 @@ const Sidebar = ({ selectedAnalysis, onSelectAnalysis, onNewAnalysis }: SidebarP
               </button>
             );
           })}
+        </div>
+
+        {/* Menu Section */}
+        <div className="mt-8">
+          <div className="px-4 mb-2">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              MENU
+            </h2>
+          </div>
+          <div className="space-y-1 px-2">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.label}
+                  onClick={item.action}
+                  className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted rounded-md transition-colors duration-150"
+                >
+                  <Icon className="mr-3 h-5 w-5" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Recent Conversations Section */}

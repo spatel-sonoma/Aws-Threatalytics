@@ -9,6 +9,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
+import ClientDashboard from "./pages/ClientDashboard";
+import AdminLaunchDashboard from "./pages/AdminLaunchDashboard";
+import ClientAssistant from "./pages/ClientAssistant";
 import AdminDashboard from "./features/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +40,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <History />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/client-dashboard"
+              element={
+                <ProtectedRoute>
+                  <ClientDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-launch"
+              element={
+                <ProtectedRoute>
+                  <AdminLaunchDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assistant"
+              element={
+                <ProtectedRoute>
+                  <ClientAssistant />
                 </ProtectedRoute>
               }
             />

@@ -227,6 +227,146 @@ functions:
               - Authorization
             allowCredentials: false
 
+  # NEW CLIENT REQUIREMENTS: Activity Log
+  activityLog:
+    handler: lambda_functions/activity_log.lambda_handler
+    events:
+      - http:
+          path: /admin/activity
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+      - http:
+          path: /admin/note/update
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+
+  # NEW CLIENT REQUIREMENTS: Roadmap Manager
+  roadmapManager:
+    handler: lambda_functions/roadmap_manager.lambda_handler
+    events:
+      - http:
+          path: /admin/roadmap
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+      - http:
+          path: /admin/roadmap/update
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+      - http:
+          path: /admin/roadmap/export
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+
+  # NEW CLIENT REQUIREMENTS: Document Processor
+  documentProcessor:
+    handler: lambda_functions/document_processor.lambda_handler
+    events:
+      - http:
+          path: /upload
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+      - http:
+          path: /process
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+      - http:
+          path: /ask
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+
+  # NEW CLIENT REQUIREMENTS: Feedback
+  feedback:
+    handler: lambda_functions/feedback.lambda_handler
+    events:
+      - http:
+          path: /feedback
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+
+  # NEW CLIENT REQUIREMENTS: Metrics
+  metrics:
+    handler: lambda_functions/metrics.lambda_handler
+    events:
+      - http:
+          path: /metrics
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+
+  # NEW CLIENT REQUIREMENTS: Image Validator
+  imageValidator:
+    handler: lambda_functions/image_validator.lambda_handler
+    events:
+      - http:
+          path: /image/validate
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-API-Key
+            allowCredentials: false
+
   # NEW: Admin Authentication
   adminAuth:
     handler: lambda_functions/admin_auth.lambda_handler

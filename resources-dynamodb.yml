@@ -33,3 +33,64 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
+
+  # New Client Requirements Tables
+  ThreatalyticsActivityLog:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ThreatalyticsActivityLog
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: activity_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: activity_id
+          KeyType: RANGE
+
+  ThreatalyticsRoadmap:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ThreatalyticsRoadmap
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+
+  ThreatalyticsFeedback:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ThreatalyticsFeedback
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+
+  ThreatalyticsDocuments:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ThreatalyticsDocuments
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: document_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: document_id
+          KeyType: RANGE
