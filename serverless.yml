@@ -505,9 +505,5 @@ resources:
           IgnorePublicAcls: true
           RestrictPublicBuckets: true
 
-resources:
-  # Include DynamoDB tables
-  - ${file(resources-dynamodb.yml)}
-
 plugins:
   - serverless-python-requirements
