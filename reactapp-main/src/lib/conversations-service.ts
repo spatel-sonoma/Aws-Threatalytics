@@ -28,6 +28,8 @@ class ConversationsService {
     
     try {
       const tokens = JSON.parse(tokensStr);
+      console.log('Full tokens object:', tokens);
+      
       const accessToken = tokens.access_token;
       
       if (!accessToken) {
@@ -36,6 +38,7 @@ class ConversationsService {
       }
       
       console.log('Using access token for conversations API (first 20 chars):', accessToken.substring(0, 20) + '...');
+      console.log('Full access token:', accessToken);
       
       return {
         'Content-Type': 'application/json',
