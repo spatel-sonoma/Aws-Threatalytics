@@ -12,12 +12,20 @@ provider:
     SUBSCRIPTIONS_TABLE: ThreatalyticsPlans
     USAGE_TABLE: ThreatalyticsUsage
     STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, ''}
+    STRIPE_SECRET_NAME: threatalytics/stripe
+    ADMIN_SECRET_KEY: ${env:ADMIN_SECRET_KEY, 'threatalytics-admin-secret-2025'}
+    STRIPE_PRICE_ID_STARTER: ${env:STRIPE_PRICE_ID_STARTER, ''}
+    STRIPE_PRICE_ID_PROFESSIONAL: ${env:STRIPE_PRICE_ID_PROFESSIONAL, ''}
+    STRIPE_PRICE_ID_ENTERPRISE: ${env:STRIPE_PRICE_ID_ENTERPRISE, ''}
   
   iamRoleStatements:
     - Effect: Allow
       Action:
         - secretsmanager:GetSecretValue
-      Resource: "arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:threatalytics-openai-key-*"
+      Resource: 
+        - "arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:threatalytics-openai-key-*"
+        - "arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:threatalytics/stripe-*"
+        - "arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:threatalytics/admin-*"
     - Effect: Allow
       Action:
         - dynamodb:PutItem
@@ -25,6 +33,7 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:Query
         - dynamodb:DeleteItem
+        - dynamodb:Scan
       Resource:
         - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsUsage"
         - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsPlans"
@@ -218,6 +227,169 @@ functions:
               - Authorization
             allowCredentials: false
 
+  # NEW: Admin Authentication
+  adminAuth:
+    handler: lambda_functions/admin_auth.lambda_handler
+    environment:
+      ADMIN_SECRET_KEY: ${env:ADMIN_SECRET_KEY, 'threatalytics-admin-secret-2025'}
+    events:
+      - http:
+          path: /admin/auth
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/auth
+          method: options
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+
+  # NEW: Usage Tracking
+  usageTracker:
+    handler: lambda_functions/usage_tracker.lambda_handler
+    events:
+      - http:
+          path: /usage
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /usage/track
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /usage/check
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+
+  # NEW: Subscription Management
+  subscriptionManager:
+    handler: lambda_functions/subscription_manager.lambda_handler
+    environment:
+      STRIPE_PRICE_ID_STARTER: ${env:STRIPE_PRICE_ID_STARTER, 'price_starter'}
+      STRIPE_PRICE_ID_PROFESSIONAL: ${env:STRIPE_PRICE_ID_PROFESSIONAL, 'price_professional'}
+      STRIPE_PRICE_ID_ENTERPRISE: ${env:STRIPE_PRICE_ID_ENTERPRISE, 'price_enterprise'}
+    events:
+      - http:
+          path: /subscription/create
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /subscription/status
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /subscription/cancel
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /subscription/portal
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+
+  # Admin Dashboard API
+  adminDashboard:
+    handler: admin/admin-api2.lambda_handler
+    environment:
+      STRIPE_SECRET_NAME: threatalytics/stripe
+    events:
+      - http:
+          path: /admin/dashboard/stats
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/users
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/users/recent
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/charts/revenue
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/charts/usage
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/users/export
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+
 resources:
   Resources:
     UsageTable:
@@ -225,12 +397,12 @@ resources:
       Properties:
         TableName: ThreatalyticsUsage
         AttributeDefinitions:
-          - AttributeName: api_key
+          - AttributeName: user_id
             AttributeType: S
           - AttributeName: timestamp
             AttributeType: S
         KeySchema:
-          - AttributeName: api_key
+          - AttributeName: user_id
             KeyType: HASH
           - AttributeName: timestamp
             KeyType: RANGE
@@ -245,9 +417,13 @@ resources:
         AttributeDefinitions:
           - AttributeName: user_id
             AttributeType: S
+          - AttributeName: subscription_id
+            AttributeType: S
         KeySchema:
           - AttributeName: user_id
             KeyType: HASH
+          - AttributeName: subscription_id
+            KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true

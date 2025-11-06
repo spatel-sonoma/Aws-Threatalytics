@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upgrade Plan - Threatalytics AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            color: #ff7b1c;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 18px;
+            color: #888;
+        }
+
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .pricing-card {
+            background: #2d2d2d;
+            border-radius: 16px;
+            padding: 40px;
+            position: relative;
+            border: 2px solid #3d3d3d;
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            border-color: #ff7b1c;
+        }
+
+        .pricing-card.popular {
+            border-color: #ff7b1c;
+            background: linear-gradient(135deg, #2d2d2d 0%, #3d2d2d 100%);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -15px;
+            right: 30px;
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
+            color: white;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .plan-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #ff7b1c;
+        }
+
+        .plan-price {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .plan-price span {
+            font-size: 16px;
+            color: #888;
+        }
+
+        .plan-description {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .features {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+
+        .features li {
+            padding: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        .features li::before {
+            content: "✓";
+            color: #4cd964;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .subscribe-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .subscribe-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 123, 28, 0.3);
+        }
+
+        .subscribe-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .current-plan {
+            background: #3d3d3d;
+            color: #888;
+        }
+
+        .usage-section {
+            background: #2d2d2d;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .usage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .usage-header h2 {
+            font-size: 24px;
+            color: #ff7b1c;
+        }
+
+        .usage-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .usage-stat {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .usage-stat-label {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .usage-stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ff7b1c;
+        }
+
+        .usage-bar {
+            height: 8px;
+            background: #3d3d3d;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .usage-progress {
+            height: 100%;
+            background: linear-gradient(135deg, #d85a00 0%, #ff7b1c 100%);
+            transition: width 0.3s ease;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #ff7b1c;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn">← Back to Dashboard</a>
+
+        <div class="header">
+            <h1>🚀 Upgrade Your Plan</h1>
+            <p>Choose the perfect plan for your threat analysis needs</p>
+        </div>
+
+        <div class="usage-section" id="usageSection">
+            <div class="usage-header">
+                <h2>📊 Current Usage</h2>
+                <div>
+                    <span style="color: #888;">Plan: </span>
+                    <span style="color: #ff7b1c; font-weight: 600;" id="currentPlan">Loading...</span>
+                </div>
+            </div>
+            <div class="usage-stats">
+                <div class="usage-stat">
+                    <div class="usage-stat-label">API Calls This Month</div>
+                    <div class="usage-stat-value" id="apiCalls">-</div>
+                </div>
+                <div class="usage-stat">
+                    <div class="usage-stat-label">Remaining Calls</div>
+                    <div class="usage-stat-value" id="remainingCalls">-</div>
+                </div>
+                <div class="usage-stat">
+                    <div class="usage-stat-label">Usage Percentage</div>
+                    <div class="usage-stat-value" id="usagePercent">-%</div>
+                </div>
+            </div>
+            <div class="usage-bar">
+                <div class="usage-progress" id="usageBar" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="pricing-cards">
+            <!-- Free Plan -->
+            <div class="pricing-card">
+                <div class="plan-name">Free</div>
+                <div class="plan-price">$0<span>/month</span></div>
+                <div class="plan-description">Perfect for trying out our service</div>
+                <ul class="features">
+                    <li>100 API calls per month</li>
+                    <li>All 4 endpoints</li>
+                    <li>Email support</li>
+                    <li>Community access</li>
+                </ul>
+                <button class="subscribe-btn current-plan" disabled>Current Plan</button>
+            </div>
+
+            <!-- Starter Plan -->
+            <div class="pricing-card">
+                <div class="plan-name">Starter</div>
+                <div class="plan-price">$9.99<span>/month</span></div>
+                <div class="plan-description">Great for individuals and small projects</div>
+                <ul class="features">
+                    <li>500 API calls per month</li>
+                    <li>All 4 endpoints</li>
+                    <li>Priority email support</li>
+                    <li>Community access</li>
+                    <li>Analytics dashboard</li>
+                </ul>
+                <button class="subscribe-btn" onclick="subscribePlan('starter')">Subscribe</button>
+            </div>
+
+            <!-- Professional Plan -->
+            <div class="pricing-card popular">
+                <div class="popular-badge">Most Popular</div>
+                <div class="plan-name">Professional</div>
+                <div class="plan-price">$49.99<span>/month</span></div>
+                <div class="plan-description">Ideal for professionals and growing teams</div>
+                <ul class="features">
+                    <li>5,000 API calls per month</li>
+                    <li>All 4 endpoints</li>
+                    <li>24/7 priority support</li>
+                    <li>Advanced analytics</li>
+                    <li>Custom integrations</li>
+                    <li>SLA guarantee</li>
+                </ul>
+                <button class="subscribe-btn" onclick="subscribePlan('professional')">Subscribe</button>
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div class="pricing-card">
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-price">Custom</div>
+                <div class="plan-description">For large organizations with specific needs</div>
+                <ul class="features">
+                    <li>Unlimited API calls</li>
+                    <li>All 4 endpoints</li>
+                    <li>Dedicated support team</li>
+                    <li>Custom deployment</li>
+                    <li>On-premise option</li>
+                    <li>Custom SLA</li>
+                    <li>Training & onboarding</li>
+                </ul>
+                <button class="subscribe-btn" onclick="contactSales()">Contact Sales</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const API_BASE_URL = 'https://authapi.threatalyticsai.com';
+
+        // Load usage data
+        async function loadUsage() {
+            if (!authManager.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/usage`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authManager.getAccessToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                document.getElementById('currentPlan').textContent = (data.plan || 'free').toUpperCase();
+                document.getElementById('apiCalls').textContent = data.current || 0;
+                document.getElementById('remainingCalls').textContent = 
+                    data.limit === 'unlimited' ? '∞' : (data.remaining || 0);
+                document.getElementById('usagePercent').textContent = 
+                    data.percentage ? `${Math.round(data.percentage)}%` : '0%';
+                document.getElementById('usageBar').style.width = 
+                    data.percentage ? `${Math.min(data.percentage, 100)}%` : '0%';
+
+            } catch (error) {
+                console.error('Error loading usage:', error);
+            }
+        }
+
+        async function subscribePlan(plan) {
+            if (!authManager.isAuthenticated()) {
+                alert('Please login first');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/subscription/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authManager.getAccessToken()}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ plan })
+                });
+
+                const data = await response.json();
+
+                if (data.checkoutUrl) {
+                    // Redirect to Stripe Checkout
+                    window.location.href = data.checkoutUrl;
+                } else {
+                    alert('Error creating checkout session');
+                }
+            } catch (error) {
+                console.error('Error subscribing:', error);
+                alert('Error creating subscription. Please try again.');
+            }
+        }
+
+        function contactSales() {
+            window.location.href = 'mailto:sales@threatalyticsai.com?subject=Enterprise Plan Inquiry';
+        }
+
+        // Load usage on page load
+        document.addEventListener('DOMContentLoaded', loadUsage);
+    </script>
+</body>
+</html>

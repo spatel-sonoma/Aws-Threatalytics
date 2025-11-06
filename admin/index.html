@@ -754,12 +754,38 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
+        // Check admin authentication
+        function checkAuth() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Add logout function
+        function logout() {
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_user');
+            window.location.href = 'login.html';
+        }
+
         // Initialize Charts
         document.addEventListener('DOMContentLoaded', function() {
+            if (!checkAuth()) return;
+            
             initializeCharts();
             loadUsers();
             // Show dashboard by default
             showSection('dashboard');
+            
+            // Display admin user info
+            const adminUser = JSON.parse(localStorage.getItem('admin_user') || '{}');
+            if (adminUser.name) {
+                const userNameEl = document.querySelector('.user-name');
+                if (userNameEl) userNameEl.textContent = adminUser.name;
+            }
         });
 
         function initializeCharts() {
