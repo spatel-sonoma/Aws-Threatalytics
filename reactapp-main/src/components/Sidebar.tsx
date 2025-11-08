@@ -40,7 +40,7 @@ const Sidebar = ({ selectedAnalysis, onSelectAnalysis, onNewAnalysis }: SidebarP
   };
 
   const menuItems = [
-    { icon: History, label: "Previous Analysis", action: () => navigate("/history") },
+    // { icon: History, label: "Previous Analysis", action: () => navigate("/history") },
     { icon: FolderOpen, label: "Case Dashboard", action: () => navigate("/client-dashboard") },
     { icon: Rocket, label: "Launch Readiness", action: () => navigate("/admin-launch") },
     { icon: Bot, label: "Policy Assistant", action: () => navigate("/assistant") },
