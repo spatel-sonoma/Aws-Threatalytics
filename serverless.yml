@@ -13,6 +13,8 @@ provider:
     USAGE_TABLE: ThreatalyticsUsage
     STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, ''}
     STRIPE_SECRET_NAME: threatalytics/stripe
+    OPENAI_SECRET: threatalytics-openai-key
+    S3_BUCKET: threatalytics-documents
     ADMIN_SECRET_KEY: ${env:ADMIN_SECRET_KEY, 'threatalytics-admin-secret-2025'}
     STRIPE_PRICE_ID_STARTER: ${env:STRIPE_PRICE_ID_STARTER, ''}
     STRIPE_PRICE_ID_PROFESSIONAL: ${env:STRIPE_PRICE_ID_PROFESSIONAL, ''}
@@ -39,6 +41,10 @@ provider:
         - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsPlans"
         - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsUsers"
         - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsConversations"
+        - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsActivityLog"
+        - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsRoadmap"
+        - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsFeedback"
+        - "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/ThreatalyticsDocuments"
     - Effect: Allow
       Action:
         - cognito-idp:AdminInitiateAuth
@@ -57,7 +63,9 @@ provider:
       Action:
         - s3:PutObject
         - s3:GetObject
-      Resource: "arn:aws:s3:::threatalytics-logs-${aws:accountId}/*"
+      Resource: 
+        - "arn:aws:s3:::threatalytics-logs-${aws:accountId}/*"
+        - "arn:aws:s3:::threatalytics-documents/*"
     - Effect: Allow
       Action:
         - sns:Publish
