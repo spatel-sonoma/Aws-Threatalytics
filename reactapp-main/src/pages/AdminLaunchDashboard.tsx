@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download } from "lucide-react";
+import Swal from 'sweetalert2';
 
 const AdminLaunchDashboard = () => {
   const navigate = useNavigate();
@@ -18,6 +19,21 @@ const AdminLaunchDashboard = () => {
       setRoadmap(data);
     } catch (error) {
       console.error('Failed to load roadmap:', error);
+      
+      // Show error with Swal
+      Swal.fire({
+        title: 'Failed to Load',
+        text: 'Unable to load roadmap. Please try refreshing the page.',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
+      
       if (error instanceof Error && error.message.includes('401')) {
         navigate('/auth');
       }
@@ -46,20 +62,77 @@ const AdminLaunchDashboard = () => {
         if (categoryKey in updated && Array.isArray(updated[categoryKey])) {
           const tasks = [...(updated[categoryKey] as RoadmapTask[])];
           tasks[index] = { ...tasks[index], status };
-          (updated as Record<string, RoadmapTask[]>)[categoryKey] = tasks;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (updated as any)[categoryKey] = tasks;
         }
         return updated;
       });
+      
+      // Success toast
+      Swal.fire({
+        title: checked ? 'Task Completed!' : 'Task Updated',
+        text: checked ? 'Great progress on your roadmap!' : 'Task marked as pending.',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false,
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800'
+        }
+      });
     } catch (error) {
       console.error('Failed to update status:', error);
+      
+      // Error notification
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to update task status. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
     }
   };
 
   const exportRoadmap = () => {
     try {
       roadmapService.exportRoadmap();
+      
+      // Success notification
+      Swal.fire({
+        title: 'Exported!',
+        text: 'Roadmap CSV file has been downloaded.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800'
+        }
+      });
     } catch (error) {
       console.error('Failed to export roadmap:', error);
+      
+      // Error notification
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to export roadmap. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
     }
   };
 

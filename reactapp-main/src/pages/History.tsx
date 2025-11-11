@@ -4,6 +4,7 @@ import { conversationsService, Conversation } from "@/lib/conversations-service"
 import { Button } from "@/components/ui/button";
 import { Trash2, MessageSquare, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Swal from 'sweetalert2';
 
 const History = () => {
   const navigate = useNavigate();
@@ -18,6 +19,21 @@ const History = () => {
       setConversations(data);
     } catch (error) {
       console.error('Failed to load conversations:', error);
+      
+      // Show error with Swal
+      Swal.fire({
+        title: 'Failed to Load',
+        text: 'Unable to load conversation history. Please try refreshing the page.',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
+      
       // If authentication fails, redirect to login
       if (error instanceof Error && error.message.includes('401')) {
         navigate('/auth');
@@ -34,7 +50,25 @@ const History = () => {
   const handleDelete = async (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (!confirm('Are you sure you want to delete this conversation?')) return;
+    const result = await Swal.fire({
+      title: 'Delete Conversation?',
+      text: "This action cannot be undone. Are you sure you want to delete this conversation?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f97316',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete it',
+      cancelButtonText: 'Cancel',
+      background: '#1a1a1a',
+      color: '#fff',
+      customClass: {
+        popup: 'border border-gray-800',
+        confirmButton: 'font-semibold',
+        cancelButton: 'font-semibold'
+      }
+    });
+
+    if (!result.isConfirmed) return;
     
     const success = await conversationsService.deleteConversation(conversationId);
     if (success) {
@@ -42,6 +76,34 @@ const History = () => {
       if (selectedConversation?.conversation_id === conversationId) {
         setSelectedConversation(null);
       }
+      
+      // Success message
+      Swal.fire({
+        title: 'Deleted!',
+        text: 'The conversation has been deleted.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800'
+        }
+      });
+    } else {
+      // Error message
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to delete the conversation. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
     }
   };
 

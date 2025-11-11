@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { API_CONFIG, ENDPOINTS } from "@/config/api";
 import { conversationsService } from "@/lib/conversations-service";
+import Swal from 'sweetalert2';
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -249,6 +250,21 @@ const ChatInterface = ({
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      
+      // Show error with Swal
+      Swal.fire({
+        title: 'Request Failed',
+        text: errorMessage,
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
+      
       const assistantMessage: Message = {
         role: "assistant",
         content: `<div style="color: #ff4444;">❌ Error: ${errorMessage}<br><br>Please try again or contact support.</div>`,

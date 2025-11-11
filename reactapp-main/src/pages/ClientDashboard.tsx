@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Swal from 'sweetalert2';
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
@@ -26,6 +27,21 @@ const ClientDashboard = () => {
       setNotes(initialNotes);
     } catch (error) {
       console.error('Failed to load activities:', error);
+      
+      // Show error with Swal
+      Swal.fire({
+        title: 'Failed to Load',
+        text: 'Unable to load activity log. Please try refreshing the page.',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
+      
       // If authentication fails, redirect to login
       if (error instanceof Error && error.message.includes('401')) {
         navigate('/auth');
@@ -45,8 +61,36 @@ const ClientDashboard = () => {
     
     try {
       await activityService.updateNote(entry.activity_id, notes[index] || "");
+      
+      // Success notification
+      Swal.fire({
+        title: 'Saved!',
+        text: 'Case note updated successfully.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800'
+        }
+      });
     } catch (error) {
       console.error('Failed to update note:', error);
+      
+      // Error notification
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to update case note. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
     }
   };
 

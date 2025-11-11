@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Upload, MessageSquare, ThumbsUp, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import Swal from 'sweetalert2';
 
 const ClientAssistant = () => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const ClientAssistant = () => {
       setMetrics(data);
     } catch (error) {
       console.error('Failed to load metrics:', error);
+      // Silently fail for metrics - non-critical
     }
   };
 
@@ -50,7 +52,18 @@ const ClientAssistant = () => {
       reader.onload = async (e) => {
         const base64 = e.target?.result?.toString().split(',')[1];
         if (!base64) {
-          alert('Failed to read file');
+          Swal.fire({
+            title: 'Error',
+            text: 'Failed to read file. Please try again.',
+            icon: 'error',
+            confirmButtonColor: '#f97316',
+            background: '#1a1a1a',
+            color: '#fff',
+            customClass: {
+              popup: 'border border-gray-800',
+              confirmButton: 'font-semibold'
+            }
+          });
           setProcessing(false);
           return;
         }
@@ -62,13 +75,35 @@ const ClientAssistant = () => {
         // Process
         await documentService.processDocument(uploadRes.document_id);
         
-        alert('File processed successfully. You may now ask a question.');
+        Swal.fire({
+          title: 'Success!',
+          text: 'File processed successfully. You may now ask a question.',
+          icon: 'success',
+          confirmButtonColor: '#f97316',
+          background: '#1a1a1a',
+          color: '#fff',
+          customClass: {
+            popup: 'border border-gray-800',
+            confirmButton: 'font-semibold'
+          }
+        });
         setProcessing(false);
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('Upload/process error:', error);
-      alert('Failed to process file');
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to process file. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
       setProcessing(false);
     }
   };
@@ -91,6 +126,21 @@ const ClientAssistant = () => {
       }
     } catch (error) {
       console.error('Ask error:', error);
+      
+      // Show error with Swal
+      Swal.fire({
+        title: 'Request Failed',
+        text: 'Failed to get answer. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
+      
       setResponse('Failed to get answer. Please try again.');
     }
   };
@@ -104,8 +154,36 @@ const ClientAssistant = () => {
       });
       setFeedbackSent(true);
       loadMetrics();
+      
+      // Success notification
+      Swal.fire({
+        title: 'Thank You!',
+        text: 'Your feedback has been submitted successfully.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800'
+        }
+      });
     } catch (error) {
       console.error('Feedback error:', error);
+      
+      // Error notification
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to submit feedback. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff',
+        customClass: {
+          popup: 'border border-gray-800',
+          confirmButton: 'font-semibold'
+        }
+      });
     }
   };
 
