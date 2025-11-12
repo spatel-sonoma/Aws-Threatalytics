@@ -36,6 +36,19 @@ def decimal_default(obj):
 def get_qs(event):
     return event.get("queryStringParameters") or {}
 
+def verify_admin_auth(event):
+    """Verify admin authentication via X-Admin-Secret header"""
+    headers = event.get('headers', {})
+    # Check both lowercase and proper case
+    admin_secret = headers.get('X-Admin-Secret') or headers.get('x-admin-secret')
+    
+    # Admin secret from environment or hardcoded
+    expected_secret = os.environ.get('ADMIN_SECRET_KEY', 'threatalytics-admin-secret-2025')
+    
+    if admin_secret != expected_secret:
+        return False
+    return True
+
 # --- Admin Functions ---
 def get_dashboard_stats():
     total_users = users_table.scan(Select='COUNT')['Count']
@@ -467,6 +480,7 @@ def export_users_data(event):
 # --- CORS Helper ---
 def get_cors_headers(event=None):
     allowed_origins = [
+        'https://api.threatalyticsai.com',
         'http://d2hmjlz5x1eh26.cloudfront.net',
         'http://localhost:8000',
         'http://127.0.0.1:8000',
@@ -475,7 +489,7 @@ def get_cors_headers(event=None):
     origin = None
     if event and event.get('headers'):
         origin = event['headers'].get('origin') or event['headers'].get('Origin')
-    actual_origin = origin if origin in allowed_origins else allowed_origins[0]
+    actual_origin = origin if origin in allowed_origins else '*'
 
     # Debug (shows up in CloudWatch)
     print(f"CORS origin received: {origin} -> using: {actual_origin}")
@@ -483,7 +497,7 @@ def get_cors_headers(event=None):
     return {
         'Access-Control-Allow-Origin': actual_origin,
         'Access-Control-Allow-Methods': 'GET,POST,OPTIONS,PUT,DELETE',
-        'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Api-Key',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Api-Key,X-Admin-Secret',
         'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Expose-Headers': 'Content-Disposition',
         'Vary': 'Origin'
@@ -498,13 +512,23 @@ def create_response(status_code, body, event=None):
 
 # --- Main Router ---
 def lambda_handler(event, context):
-    # Preflight
+    # Preflight - always allow OPTIONS
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': get_cors_headers(event), 'body': json.dumps({'message': 'CORS preflight OK'})}
+
+    # Verify admin authentication for all non-OPTIONS requests
+    if not verify_admin_auth(event):
+        return {
+            'statusCode': 401,
+            'headers': get_cors_headers(event),
+            'body': json.dumps({'error': 'Unauthorized - Invalid admin secret'})
+        }
 
     try:
         path = event.get('path', '')
         method = event.get('httpMethod', 'GET')
+        
+        print(f"Admin API Request - Method: {method}, Path: {path}")
         
         # Dashboard stats
         if path == '/admin/dashboard/stats' or path == '/admin/stats':
@@ -547,4 +571,6 @@ def lambda_handler(event, context):
 
     except Exception as e:
         print(f"Unhandled error: {e}")
+        import traceback
+        traceback.print_exc()
         return create_response(500, {'error': str(e)}, event)
