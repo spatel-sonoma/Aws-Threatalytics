@@ -493,6 +493,15 @@ functions:
               - Authorization
             allowCredentials: true
       - http:
+          path: /admin/stats
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
           path: /admin/users
           method: get
           cors:
@@ -502,7 +511,61 @@ functions:
               - Authorization
             allowCredentials: true
       - http:
+          path: /admin/users/{user_id}
+          method: delete
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
           path: /admin/users/recent
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/users/export
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/subscriptions
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/subscriptions/{subscription_id}
+          method: delete
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/api-usage
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+      - http:
+          path: /admin/revenue
           method: get
           cors:
             origin: '*'
@@ -521,15 +584,6 @@ functions:
             allowCredentials: true
       - http:
           path: /admin/charts/usage
-          method: get
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - Authorization
-            allowCredentials: true
-      - http:
-          path: /admin/users/export
           method: get
           cors:
             origin: '*'
