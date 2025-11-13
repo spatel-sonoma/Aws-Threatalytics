@@ -38,7 +38,15 @@ export const ENDPOINTS = {
         status: '/subscription/status',  // GET - Check subscription status
         create: '/subscription/create',  // POST - Create Stripe checkout session
         portal: '/subscription/portal',  // GET - Access billing portal
+        cancel: '/subscription/cancel',  // POST - Cancel subscription
         webhook: '/stripe/webhook'       // ✅ Live - Handle Stripe payment events
+    },
+
+    // Usage Tracking
+    usage: {
+        get: '/usage',                  // GET - Get current usage stats
+        track: '/usage/track',          // POST - Track API usage
+        history: '/usage/history'       // GET - Get usage history
     },
 
     // Admin Dashboard - Mixed Status

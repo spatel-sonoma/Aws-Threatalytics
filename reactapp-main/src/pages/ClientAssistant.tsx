@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { documentService } from "@/lib/document-service";
 import { feedbackService } from "@/lib/feedback-service";
 import { metricsService, MetricsData } from "@/lib/metrics-service";
+import { useUsageTracking } from "@/hooks/use-usage";
+import UsageDisplay from "@/components/UsageDisplay";
+import UpgradeModal from "@/components/UpgradeModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +30,8 @@ const ClientAssistant = () => {
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [inputError, setInputError] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { usage, checkUsageBeforeRequest, trackApiUsage, refreshUsage } = useUsageTracking();
 
   const loadMetrics = async () => {
     try {
@@ -111,6 +116,12 @@ const ClientAssistant = () => {
   const handleAsk = async () => {
     if (!question.trim()) return;
 
+    // Check usage before making request
+    const canProceed = await checkUsageBeforeRequest();
+    if (!canProceed) {
+      return; // Usage limit reached, upgrade prompt shown
+    }
+
     try {
       const data = await documentService.askQuestion(question, mode, documentId);
       
@@ -123,6 +134,9 @@ const ClientAssistant = () => {
         setSuggestions([]);
         setInputError(null);
         setFeedbackSent(false);
+        
+        // Track API usage after successful response
+        await trackApiUsage('document_processor');
       }
     } catch (error) {
       console.error('Ask error:', error);
@@ -212,6 +226,9 @@ const ClientAssistant = () => {
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+        {/* Usage Display */}
+        <UsageDisplay onUpgradeClick={() => setShowUpgradeModal(true)} />
+
         {/* Upload Document */}
         <Card className="bg-[#1a1a1a] border-gray-800 shadow-lg">
           <CardContent className="p-8 space-y-5">
@@ -486,6 +503,17 @@ const ClientAssistant = () => {
           </Card>
         )}
       </div>
+      
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => {
+          setShowUpgradeModal(false);
+          refreshUsage();
+        }}
+        currentPlan={usage?.plan}
+        usage={usage || undefined}
+      />
     </div>
   );
 };

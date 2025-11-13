@@ -26,6 +26,7 @@ provider:
         - secretsmanager:GetSecretValue
       Resource: 
         - "arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:threatalytics-openai-key-*"
+        - "arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:threatalytics/openai-*"
         - "arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:threatalytics/stripe-*"
         - "arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:threatalytics/admin-*"
     - Effect: Allow

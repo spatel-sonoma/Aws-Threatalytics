@@ -284,7 +284,12 @@ const History = () => {
             {/* Action Button */}
             <div className="border-t border-border p-4">
               <Button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/dashboard', { 
+                  state: { 
+                    conversation: selectedConversation,
+                    resumeMode: selectedConversation.mode 
+                  } 
+                })}
                 className="w-full bg-orange-600 hover:bg-orange-700"
               >
                 Continue this conversation

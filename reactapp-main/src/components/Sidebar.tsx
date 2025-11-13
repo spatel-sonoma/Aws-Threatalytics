@@ -3,11 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import UsageDisplay from "@/components/UsageDisplay";
+import { useState } from "react";
 
 interface SidebarProps {
   selectedAnalysis: string;
   onSelectAnalysis: (mode: string) => void;
   onNewAnalysis?: () => void;
+  onUpgradeClick?: () => void;
 }
 
 const ANALYSIS_TYPES = [
@@ -17,7 +20,7 @@ const ANALYSIS_TYPES = [
   { id: 'drill', name: 'Simulate Drill', icon: Target }
 ];
 
-const Sidebar = ({ selectedAnalysis, onSelectAnalysis, onNewAnalysis }: SidebarProps) => {
+const Sidebar = ({ selectedAnalysis, onSelectAnalysis, onNewAnalysis, onUpgradeClick }: SidebarProps) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -128,6 +131,15 @@ const Sidebar = ({ selectedAnalysis, onSelectAnalysis, onNewAnalysis }: SidebarP
             Previous Analysis
           </button>
         </div>
+      </div>
+
+      {/* Usage Display */}
+      <div className="border-t p-4">
+        <UsageDisplay 
+          onUpgradeClick={onUpgradeClick}
+          compact 
+          showUpgradeButton={true}
+        />
       </div>
 
       {/* User Section */}

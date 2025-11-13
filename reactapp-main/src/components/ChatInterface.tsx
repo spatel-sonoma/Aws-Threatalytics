@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Loader2, AlertCircle } from "lucide-react";
+import { Send, Loader2, AlertCircle, Upload, X, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,8 @@ import Swal from 'sweetalert2';
 interface Message {
   role: "user" | "assistant" | "system";
   content: string;
+  image?: string; // base64 image data
+  imageUrl?: string; // for displaying uploaded images
 }
 
 // Mode configurations
@@ -50,6 +52,10 @@ interface ChatInterfaceProps {
   onModeSelect?: (mode: string) => void;
   messages?: Message[];
   setMessages?: React.Dispatch<React.SetStateAction<Message[]>>;
+  conversationId?: string | null;
+  onConversationIdChange?: (id: string | null) => void;
+  checkUsageBeforeRequest?: () => Promise<boolean>;
+  trackApiUsage?: (endpoint: string) => Promise<void>;
 }
 
 const VAGUE_PHRASES = [
@@ -139,18 +145,38 @@ const ChatInterface = ({
   analysisType, 
   onModeSelect = () => {}, 
   messages: externalMessages, 
-  setMessages: setExternalMessages 
+  setMessages: setExternalMessages,
+  conversationId: externalConversationId,
+  onConversationIdChange,
+  checkUsageBeforeRequest,
+  trackApiUsage
 }: ChatInterfaceProps) => {
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(externalConversationId || null);
   const [internalMessages, setInternalMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [inputError, setInputError] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<{ file: File; preview: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const messages = externalMessages || internalMessages;
   const setMessages = setExternalMessages || setInternalMessages;
+
+  // Sync external conversation ID
+  useEffect(() => {
+    if (externalConversationId !== undefined) {
+      setCurrentConversationId(externalConversationId);
+    }
+  }, [externalConversationId]);
+
+  // Update parent when conversation ID changes
+  useEffect(() => {
+    if (onConversationIdChange && currentConversationId !== externalConversationId) {
+      onConversationIdChange(currentConversationId);
+    }
+  }, [currentConversationId, onConversationIdChange, externalConversationId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -162,6 +188,7 @@ const ChatInterface = ({
       setCurrentConversationId(null);
       setInput("");
       setInputError(null);
+      setUploadedImage(null);
     }
   }, [messages.length]);
 
@@ -171,74 +198,192 @@ const ChatInterface = ({
     return VAGUE_PHRASES.some((phrase) => q.includes(phrase));
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    // Validate input
-    if (detectVagueInput(input)) {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      Swal.fire({
+        title: 'Invalid File',
+        text: 'Please upload an image file (PNG, JPG, etc.)',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff'
+      });
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      Swal.fire({
+        title: 'File Too Large',
+        text: 'Please upload an image smaller than 10MB',
+        icon: 'error',
+        confirmButtonColor: '#f97316',
+        background: '#1a1a1a',
+        color: '#fff'
+      });
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = e.target?.result as string;
+      setUploadedImage({ file, preview });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setUploadedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSend = async () => {
+    if ((!input.trim() && !uploadedImage) || isLoading) return;
+
+    // Check usage before making request
+    if (checkUsageBeforeRequest) {
+      const canProceed = await checkUsageBeforeRequest();
+      if (!canProceed) {
+        return; // Usage limit reached, upgrade prompt shown
+      }
+    }
+
+    // Validate input (skip for image-only messages)
+    if (input.trim() && detectVagueInput(input) && !uploadedImage) {
       setInputError("Please be more specific. Try using one of the suggested questions below:");
       return;
     }
 
     setInputError(null);
-    const userMessage: Message = { role: "user", content: input };
+    
+    let imageBase64 = null;
+    let imageUrl = null;
+
+    // Process image if uploaded
+    if (uploadedImage) {
+      imageBase64 = uploadedImage.preview.split(',')[1]; // Remove data URL prefix
+      imageUrl = uploadedImage.preview;
+    }
+
+    const userMessage: Message = { 
+      role: "user", 
+      content: input || "Uploaded image", 
+      imageUrl 
+    };
+    
     setMessages((prev) => [...prev, userMessage]);
     const messageText = input;
     setInput("");
+    const currentImage = uploadedImage;
+    setUploadedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    
     setIsLoading(true);
 
     try {
-      // API Configuration matching the working website
-      const API_KEY = 'TTWy409iie9ozE5vIW5rOhZSe3ZC3OU4hYDjQJOd';
-      
-      // Prepare request body based on mode (matching website implementation)
-      let requestBody: Record<string, string> = {};
-      switch(analysisType) {
-        case 'analyze':
-        case 'redact':
-          requestBody = { text: messageText };
-          break;
-        case 'report':
-          requestBody = { data: messageText };
-          break;
-        case 'drill':
-          requestBody = { scenario: messageText };
-          break;
-        default:
-          requestBody = { text: messageText };
+      let responseText = "";
+
+      // If image is uploaded, use OpenAI Vision API directly
+      if (currentImage && imageBase64) {
+        const OPENAI_KEY = import.meta.env.VITE_OPENAI_KEY || 'sk-proj-your-key-here';
+        const questionText = messageText || "Please analyze this image and describe what you see.";
+        
+        // Call OpenAI Vision API
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: questionText
+                  },
+                  {
+                    type: 'image_url',
+                    image_url: {
+                      url: `data:image/jpeg;base64,${imageBase64}`
+                    }
+                  }
+                ]
+              }
+            ],
+            max_tokens: 2000,
+            temperature: 0.7
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || "Failed to process image");
+        }
+
+        const data = await response.json();
+        responseText = data.choices[0]?.message?.content || "Unable to process image.";
+        
+      } else {
+        // Regular text-based analysis
+        const API_KEY = 'TTWy409iie9ozE5vIW5rOhZSe3ZC3OU4hYDjQJOd';
+        
+        // Prepare request body based on mode
+        let requestBody: Record<string, string> = {};
+        switch(analysisType) {
+          case 'analyze':
+          case 'redact':
+            requestBody = { text: messageText };
+            break;
+          case 'report':
+            requestBody = { data: messageText };
+            break;
+          case 'drill':
+            requestBody = { scenario: messageText };
+            break;
+          default:
+            requestBody = { text: messageText };
+        }
+
+        const endpoint = ENDPOINTS.analysis[analysisType as keyof typeof ENDPOINTS.analysis];
+        const response = await fetch(`${API_CONFIG.API_BASE_URL}${endpoint}`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "x-api-key": API_KEY
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to get response");
+        }
+
+        const data = await response.json();
+        responseText = data.result || data.analysis || data.report || data.recommendations || "No response";
+        
+        // Track API usage after successful response
+        if (trackApiUsage) {
+          await trackApiUsage(analysisType);
+        }
       }
 
-      const endpoint = ENDPOINTS.analysis[analysisType as keyof typeof ENDPOINTS.analysis];
-      const response = await fetch(`${API_CONFIG.API_BASE_URL}${endpoint}`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "x-api-key": API_KEY
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to get response");
-      }
-
-      const data = await response.json();
-      
-      // Extract response based on mode (matching website implementation)
-      let result = '';
-      if (data.analysis) result = data.analysis;
-      else if (data.redacted) result = data.redacted;
-      else if (data.report) result = data.report;
-      else if (data.simulation) result = data.simulation;
-      else if (data.answer) result = data.answer;
-      else if (data.formatted_prompt) result = data.formatted_prompt;
-      else result = JSON.stringify(data, null, 2);
-
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: result
+      const assistantMessage: Message = { 
+        role: "assistant", 
+        content: responseText
       };
+      
       setMessages((prev) => {
         const updatedMessages = [...prev, assistantMessage];
         
@@ -432,7 +577,18 @@ const ChatInterface = ({
                   )}
                 >
                   {message.role === 'user' ? (
-                    <p className="text-[15px] leading-relaxed">{message.content}</p>
+                    <div className="space-y-2">
+                      {message.imageUrl && (
+                        <img 
+                          src={message.imageUrl} 
+                          alt="User upload" 
+                          className="max-w-full max-h-64 rounded-lg"
+                        />
+                      )}
+                      {message.content && (
+                        <p className="text-[15px] leading-relaxed">{message.content}</p>
+                      )}
+                    </div>
                   ) : (
                     <div 
                       className={cn(
@@ -507,7 +663,47 @@ const ChatInterface = ({
             </div>
           )}
           
+          {/* Image preview */}
+          {uploadedImage && (
+            <div className="relative inline-block mb-3">
+              <img 
+                src={uploadedImage.preview} 
+                alt="Upload preview" 
+                className="max-h-48 rounded-lg border border-border"
+              />
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                onClick={removeImage}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+          
           <div className="flex gap-3 items-end relative">
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            
+            {/* Image upload button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="flex-shrink-0 h-[60px] w-[60px] border-border hover:border-orange-500"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+            >
+              <ImageIcon className="w-5 h-5" />
+            </Button>
+            
             <Textarea
               value={input}
               onChange={(e) => {
@@ -522,7 +718,7 @@ const ChatInterface = ({
                   handleSend();
                 }
               }}
-              placeholder={modeConfig[analysisType].placeholder}
+              placeholder={uploadedImage ? "Ask a question about this image..." : modeConfig[analysisType].placeholder}
               className={cn(
                 "min-h-[60px] max-h-[200px] resize-none pr-14",
                 "bg-card border-border",
@@ -532,7 +728,7 @@ const ChatInterface = ({
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim() || isLoading}
+              disabled={(!input.trim() && !uploadedImage) || isLoading}
               size="icon"
               className={cn(
                 "absolute right-2 bottom-2 h-10 w-10 rounded-full",

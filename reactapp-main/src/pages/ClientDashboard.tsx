@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { activityService, ActivityEntry } from "@/lib/activity-service";
+import { useUsageTracking } from "@/hooks/use-usage";
+import UsageDisplay from "@/components/UsageDisplay";
+import UpgradeModal from "@/components/UpgradeModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
@@ -12,6 +15,8 @@ const ClientDashboard = () => {
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [notes, setNotes] = useState<Record<number, string>>({});
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { usage, refreshUsage } = useUsageTracking();
 
   const loadActivities = useCallback(async () => {
     try {
@@ -122,6 +127,9 @@ const ClientDashboard = () => {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-6 py-6 space-y-4">
+        {/* Usage Display */}
+        <UsageDisplay onUpgradeClick={() => setShowUpgradeModal(true)} compact />
+        
         {activities.length === 0 ? (
           <Card className="bg-[#1a1a1a] border-gray-800">
             <CardContent className="p-8 text-center">
@@ -206,6 +214,17 @@ const ClientDashboard = () => {
           ))
         )}
       </div>
+      
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => {
+          setShowUpgradeModal(false);
+          refreshUsage();
+        }}
+        currentPlan={usage?.plan}
+        usage={usage || undefined}
+      />
     </div>
   );
 };
