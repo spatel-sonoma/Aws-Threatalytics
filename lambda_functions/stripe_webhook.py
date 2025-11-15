@@ -47,6 +47,62 @@ def handle_subscription_created(subscription):
         logger.error("Failed to create subscription: %s", str(e))
         raise
 
+def handle_checkout_completed(session):
+    """Handle successful checkout session completion"""
+    try:
+        customer_id = session.get('customer')
+        subscription_id = session.get('subscription')
+        metadata = session.get('metadata', {})
+        plan = metadata.get('plan', 'starter')
+        user_id = metadata.get('user_id')
+        
+        logger.info("=" * 80)
+        logger.info("CHECKOUT SESSION COMPLETED")
+        logger.info(f"Session ID: {session.get('id')}")
+        logger.info(f"Customer ID: {customer_id}")
+        logger.info(f"Subscription ID: {subscription_id}")
+        logger.info(f"User ID: {user_id}")
+        logger.info(f"Plan: {plan}")
+        logger.info(f"Payment Status: {session.get('payment_status')}")
+        logger.info(f"Full Metadata: {metadata}")
+        logger.info("=" * 80)
+        
+        if not user_id:
+            logger.error("ERROR: user_id not found in metadata! Cannot update database.")
+            logger.error(f"Available metadata keys: {list(metadata.keys())}")
+            return
+        
+        dynamodb = boto3.resource('dynamodb')
+        users_table = dynamodb.Table('ThreatalyticsUsers')
+        
+        # Update user's plan in ThreatalyticsUsers table
+        logger.info(f"Attempting to update DynamoDB for user_id: {user_id}")
+        
+        update_response = users_table.update_item(
+            Key={'user_id': user_id},
+            UpdateExpression='SET plan = :plan, subscription_status = :status, stripe_subscription_id = :sub_id, updated_at = :updated',
+            ExpressionAttributeValues={
+                ':plan': plan,
+                ':status': 'active',
+                ':sub_id': subscription_id,
+                ':updated': datetime.utcnow().isoformat()
+            },
+            ReturnValues='ALL_NEW'
+        )
+        
+        logger.info("✓ DATABASE UPDATE SUCCESSFUL")
+        logger.info(f"Updated attributes: {update_response.get('Attributes', {})}")
+        logger.info("=" * 80)
+        
+    except Exception as e:
+        logger.error("!" * 80)
+        logger.error(f"CRITICAL ERROR in handle_checkout_completed: {str(e)}")
+        logger.error(f"Error type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        logger.error("!" * 80)
+        raise
+
 def handle_subscription_updated(subscription):
     """Handle subscription updates"""
     customer_id = subscription['customer']
@@ -136,15 +192,21 @@ def handle_payment_failed(invoice):
 def lambda_handler(event, context):
     """Single entrypoint for Stripe webhook events with proper error handling"""
     try:
+        logger.info("🔔 Stripe webhook received")
+        
         payload = event.get('body', '')
         headers = event.get('headers') or {}
-        sig_header = headers.get('stripe-signature')
+        sig_header = headers.get('stripe-signature') or headers.get('Stripe-Signature')
         endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
+        
+        logger.info(f"Webhook secret configured: {bool(endpoint_secret)}")
+        logger.info(f"Signature header present: {bool(sig_header)}")
 
         try:
             event_stripe = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
-        except ValueError:
-            logger.warning("Invalid payload received")
+            logger.info("✓ Webhook signature verified")
+        except ValueError as e:
+            logger.warning(f"Invalid payload received: {e}")
             return {
                 'statusCode': 400,
                 'body': json.dumps({'error': 'Invalid payload'}),
@@ -153,8 +215,8 @@ def lambda_handler(event, context):
                     'Access-Control-Allow-Credentials': 'true'
                 }
             }
-        except stripe.error.SignatureVerificationError:
-            logger.warning("Invalid signature on webhook")
+        except stripe.error.SignatureVerificationError as e:
+            logger.warning(f"Invalid signature on webhook: {e}")
             return {
                 'statusCode': 400,
                 'body': json.dumps({'error': 'Invalid signature'}),
@@ -166,20 +228,31 @@ def lambda_handler(event, context):
 
         event_type = event_stripe.get('type')
         event_data = event_stripe.get('data', {}).get('object', {})
+        
+        logger.info(f"📨 Processing event type: {event_type}")
 
-        if event_type == 'customer.subscription.created':
+        if event_type == 'checkout.session.completed':
+            logger.info("→ Handling checkout.session.completed")
+            handle_checkout_completed(event_data)
+        elif event_type == 'customer.subscription.created':
+            logger.info("→ Handling customer.subscription.created")
             handle_subscription_created(event_data)
         elif event_type == 'customer.subscription.updated':
+            logger.info("→ Handling customer.subscription.updated")
             handle_subscription_updated(event_data)
         elif event_type == 'customer.subscription.deleted':
+            logger.info("→ Handling customer.subscription.deleted")
             handle_subscription_deleted(event_data)
         elif event_type == 'invoice.payment_succeeded':
+            logger.info("→ Handling invoice.payment_succeeded")
             handle_payment_succeeded(event_data)
         elif event_type == 'invoice.payment_failed':
+            logger.info("→ Handling invoice.payment_failed")
             handle_payment_failed(event_data)
         else:
-            logger.info("Unhandled Stripe event type: %s", event_type)
+            logger.info(f"ℹ Unhandled Stripe event type: {event_type}")
 
+        logger.info("✓ Webhook processed successfully")
         return {
             'statusCode': 200,
             'body': json.dumps({'received': True}),

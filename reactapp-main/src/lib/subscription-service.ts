@@ -243,6 +243,38 @@ class SubscriptionService {
     }
 
     /**
+     * Verify payment after successful checkout
+     */
+    async verifyPayment(sessionId: string, plan: string): Promise<void> {
+        try {
+            const response = await fetch(`${this.baseUrl}/subscription/verify`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    plan: plan
+                }),
+            });
+
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(`Failed to verify payment: ${error}`);
+            }
+
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Payment verification failed');
+            }
+            
+            console.log('Payment verified successfully:', data);
+        } catch (error) {
+            console.error('Error verifying payment:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Get plan by ID
      */
     getPlan(planId: string): Plan | undefined {

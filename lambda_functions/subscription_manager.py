@@ -7,7 +7,8 @@ from decimal import Decimal
 
 dynamodb = boto3.resource('dynamodb')
 users_table = dynamodb.Table(os.environ.get('USERS_TABLE', 'ThreatalyticsUsers'))
-subscriptions_table = dynamodb.Table(os.environ.get('SUBSCRIPTIONS_TABLE', 'ThreatalyticsPlans'))
+# ThreatalyticsPlans is actually the subscriptions/payment table
+subscriptions_table = dynamodb.Table(os.environ.get('SUBSCRIPTIONS_TABLE', 'ThreatalyticsSubscriptions'))
 
 # --- Load Stripe key from Secrets Manager (preferred) ---
 STRIPE_SECRET_NAME = os.environ.get('STRIPE_SECRET_NAME')  # e.g. 'threatalytics/stripe-key'
@@ -114,11 +115,12 @@ def lambda_handler(event, context):
         # If email missing, try to read from token (some tokens include email)
         if not email:
             try:
+                import base64
                 auth_header = event.get('headers', {}).get('Authorization', '')
                 token = auth_header.replace('Bearer ', '')
                 payload = token.split('.')[1]
                 payload += '=' * (4 - len(payload) % 4)
-                decoded = json.loads(_import_('base64').b64decode(payload))
+                decoded = json.loads(base64.b64decode(payload))
                 email = decoded.get('email') or decoded.get('username')
             except Exception:
                 pass
@@ -132,13 +134,31 @@ def lambda_handler(event, context):
 
         if method == 'POST' and path.endswith('/subscription/create'):
             body = json.loads(event.get('body', '{}'))
-            plan = body.get('plan', 'starter')
-
-            if plan not in STRIPE_PRICES:
+            # Support both plan and plan_id (frontend sends plan_id)
+            plan_id = body.get('plan_id') or body.get('plan', 'starter')
+            # Use price_id from request if provided, otherwise fallback to env var
+            price_id = body.get('price_id')
+            
+            # Log for debugging
+            print(f"Creating checkout session for plan: {plan_id}, price_id: {price_id}")
+            
+            # Validate price_id
+            if not price_id:
+                if plan_id in STRIPE_PRICES:
+                    price_id = STRIPE_PRICES[plan_id]
+                else:
+                    return {
+                        'statusCode': 400,
+                        'headers': headers,
+                        'body': json.dumps({'error': f'Invalid plan: {plan_id}'})
+                    }
+            
+            # Validate it's a real Stripe price ID
+            if not price_id.startswith('price_'):
                 return {
                     'statusCode': 400,
                     'headers': headers,
-                    'body': json.dumps({'error': 'Invalid plan'})
+                    'body': json.dumps({'error': 'Invalid Stripe price ID'})
                 }
 
             # Get or create Stripe customer
@@ -159,21 +179,53 @@ def lambda_handler(event, context):
                 )
 
             # Create checkout session
+            print("=" * 80)
+            print("CREATING STRIPE CHECKOUT SESSION")
+            print(f"  - Customer ID: {stripe_customer_id}")
+            print(f"  - Price ID: {price_id}")
+            print(f"  - Plan: {plan_id}")
+            print(f"  - User ID: {user_id}")
+            
+            # Create initial subscription entry in database with 'pending' status
+            try:
+                print(f"\nCreating pending entry in DynamoDB...")
+                update_result = users_table.update_item(
+                    Key={'user_id': user_id},
+                    UpdateExpression='SET subscription_status = :status, pending_plan = :pending_plan, updated_at = :updated',
+                    ExpressionAttributeValues={
+                        ':status': 'pending_payment',
+                        ':pending_plan': plan_id,
+                        ':updated': datetime.utcnow().isoformat()
+                    },
+                    ReturnValues='ALL_NEW'
+                )
+                print(f"✓ Pending entry created successfully")
+                print(f"Updated user attributes: {update_result.get('Attributes')}")
+            except Exception as db_error:
+                print(f"✗ ERROR creating pending entry: {db_error}")
+                import traceback
+                print(traceback.format_exc())
+            
             checkout_session = stripe.checkout.Session.create(
                 customer=stripe_customer_id,
                 payment_method_types=['card'],
                 line_items=[{
-                    'price': STRIPE_PRICES[plan],
+                    'price': price_id,
                     'quantity': 1,
                 }],
                 mode='subscription',
-                success_url='https://d1xoad2p9303mu.cloudfront.net/?session_id={CHECKOUT_SESSION_ID}',
-                cancel_url='https://d1xoad2p9303mu.cloudfront.net/',
+                success_url=f'https://d29k5fl5sa0elz.cloudfront.net/?session_id={{CHECKOUT_SESSION_ID}}&plan={plan_id}&user_id={user_id}',
+                cancel_url='https://d29k5fl5sa0elz.cloudfront.net/?cancelled=true',
                 metadata={
                     'user_id': user_id,
-                    'plan': plan
+                    'plan': plan_id
                 }
             )
+            
+            print(f"Checkout session created successfully:")
+            print(f"  - Session ID: {checkout_session.id}")
+            print(f"  - URL: {checkout_session.url}")
+            print(f"  - Metadata: {checkout_session.metadata}")
 
             return {
                 'statusCode': 200,
@@ -185,47 +237,185 @@ def lambda_handler(event, context):
             }
 
         elif method == 'GET' and path.endswith('/subscription/status'):
-            stripe_customer_id = user.get('stripe_customer_id')
+            try:
+                stripe_customer_id = user.get('stripe_customer_id')
 
-            if not stripe_customer_id:
+                if not stripe_customer_id:
+                    return {
+                        'statusCode': 200,
+                        'headers': headers,
+                        'body': json.dumps({
+                            'active': False,
+                            'plan': user.get('plan', 'free'),
+                            'message': 'No active subscription'
+                        })
+                    }
+
+                subscriptions = stripe.Subscription.list(
+                    customer=stripe_customer_id,
+                    status='active',
+                    limit=1
+                )
+
+                if subscriptions.data:
+                    sub = subscriptions.data[0]
+                    return {
+                        'statusCode': 200,
+                        'headers': headers,
+                        'body': json.dumps({
+                            'active': True,
+                            'plan': sub['items']['data'][0]['price'].get('metadata', {}).get('plan', user.get('plan', 'free')),
+                            'status': sub.status,
+                            'current_period_end': sub.current_period_end,
+                            'cancel_at_period_end': sub.cancel_at_period_end
+                        })
+                    }
+                else:
+                    return {
+                        'statusCode': 200,
+                        'headers': headers,
+                        'body': json.dumps({
+                            'active': False,
+                            'plan': user.get('plan', 'free'),
+                            'message': 'No active subscription'
+                        })
+                    }
+            except Exception as e:
+                print(f"Error in subscription status: {e}")
+                # Return user's current plan from database instead of failing
                 return {
                     'statusCode': 200,
                     'headers': headers,
                     'body': json.dumps({
-                        'active': False,
+                        'active': user.get('subscription_status') == 'active',
                         'plan': user.get('plan', 'free'),
-                        'message': 'No active subscription'
+                        'message': 'Status retrieved from database'
                     })
                 }
 
-            subscriptions = stripe.Subscription.list(
-                customer=stripe_customer_id,
-                status='active',
-                limit=1
-            )
-
-            if subscriptions.data:
-                sub = subscriptions.data[0]
+        elif method == 'POST' and path.endswith('/subscription/verify'):
+            # NEW: Verify payment completion and update database
+            body = json.loads(event.get('body', '{}'))
+            session_id = body.get('session_id')
+            plan = body.get('plan')
+            
+            print("=" * 80)
+            print("PAYMENT VERIFICATION REQUEST")
+            print(f"User ID: {user_id}")
+            print(f"Session ID: {session_id}")
+            print(f"Plan: {plan}")
+            print("=" * 80)
+            
+            if not session_id or not plan:
                 return {
-                    'statusCode': 200,
+                    'statusCode': 400,
                     'headers': headers,
-                    'body': json.dumps({
-                        'active': True,
-                        'plan': sub['items']['data'][0]['price'].get('metadata', {}).get('plan', user.get('plan', 'free')),
-                        'status': sub.status,
-                        'current_period_end': sub.current_period_end,
-                        'cancel_at_period_end': sub.cancel_at_period_end
-                    })
+                    'body': json.dumps({'error': 'Missing session_id or plan'})
                 }
-            else:
+            
+            try:
+                # Retrieve the checkout session from Stripe
+                print(f"Retrieving session from Stripe: {session_id}")
+                session = stripe.checkout.Session.retrieve(session_id)
+                
+                print(f"Session retrieved:")
+                print(f"  - Payment status: {session.payment_status}")
+                print(f"  - Session status: {session.status}")
+                print(f"  - Customer: {session.customer}")
+                print(f"  - Subscription: {session.subscription}")
+                print(f"  - Amount total: {session.amount_total}")
+                
+                if session.payment_status == 'paid' and session.status == 'complete':
+                    # Update user's plan to active
+                    subscription_id = session.subscription
+                    
+                    print(f"✓ Payment confirmed - Updating database...")
+                    print(f"  User ID: {user_id}")
+                    print(f"  Plan: {plan}")
+                    print(f"  Subscription ID: {subscription_id}")
+                    
+                    try:
+                        # Update ThreatalyticsUsers table
+                        print(f"\n1. Updating ThreatalyticsUsers table...")
+                        users_update = users_table.update_item(
+                            Key={'user_id': user_id},
+                            UpdateExpression='SET plan = :plan, subscription_status = :status, stripe_subscription_id = :sub_id, updated_at = :updated REMOVE pending_plan',
+                            ExpressionAttributeValues={
+                                ':plan': plan,
+                                ':status': 'active',
+                                ':sub_id': subscription_id,
+                                ':updated': datetime.utcnow().isoformat()
+                            },
+                            ReturnValues='ALL_NEW'
+                        )
+                        print(f"✓ ThreatalyticsUsers updated:")
+                        print(f"  {users_update.get('Attributes')}")
+                        
+                        # Create subscription entry in ThreatalyticsPlans (subscriptions) table
+                        print(f"\n2. Creating subscription entry in ThreatalyticsPlans table...")
+                        subscriptions_table.put_item(Item={
+                            'user_id': user_id,
+                            'subscription_id': subscription_id,
+                            'plan': plan,
+                            'status': 'active',
+                            'stripe_subscription_id': subscription_id,
+                            'stripe_customer_id': session.customer,
+                            'amount': session.amount_total,
+                            'currency': session.currency,
+                            'created_at': datetime.utcnow().isoformat(),
+                            'updated_at': datetime.utcnow().isoformat()
+                        })
+                        print(f"✓ Subscription entry created in ThreatalyticsPlans")
+                        
+                        print(f"\n✓✓✓ ALL DATABASE UPDATES SUCCESSFUL ✓✓✓")
+                        print("=" * 80)
+                        
+                    except Exception as db_error:
+                        print(f"\n✗✗✗ DATABASE UPDATE FAILED ✗✗✗")
+                        print(f"Error: {db_error}")
+                        import traceback
+                        print(traceback.format_exc())
+                        print("=" * 80)
+                        raise db_error
+                    
+                    return {
+                        'statusCode': 200,
+                        'headers': headers,
+                        'body': json.dumps({
+                            'success': True,
+                            'message': 'Payment verified and subscription activated',
+                            'plan': plan,
+                            'status': 'active'
+                        })
+                    }
+                else:
+                    print(f"\n✗ Payment not completed")
+                    print(f"  Payment status: {session.payment_status} (expected: paid)")
+                    print(f"  Session status: {session.status} (expected: complete)")
+                    print("=" * 80)
+                    
+                    return {
+                        'statusCode': 400,
+                        'headers': headers,
+                        'body': json.dumps({
+                            'success': False,
+                            'message': 'Payment not completed',
+                            'payment_status': session.payment_status,
+                            'session_status': session.status
+                        })
+                    }
+                    
+            except Exception as e:
+                print(f"\n✗✗✗ VERIFICATION ERROR ✗✗✗")
+                print(f"Error: {e}")
+                import traceback
+                print(traceback.format_exc())
+                print("=" * 80)
+                
                 return {
-                    'statusCode': 200,
+                    'statusCode': 500,
                     'headers': headers,
-                    'body': json.dumps({
-                        'active': False,
-                        'plan': user.get('plan', 'free'),
-                        'message': 'No active subscription'
-                    })
+                    'body': json.dumps({'error': str(e)})
                 }
 
         elif method == 'POST' and path.endswith('/subscription/cancel'):
