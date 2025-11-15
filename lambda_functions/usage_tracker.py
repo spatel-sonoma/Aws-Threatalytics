@@ -201,7 +201,10 @@ def lambda_handler(event, context):
             return {
                 'statusCode': 200,
                 'headers': headers,
-                'body': json.dumps(usage_data, cls=DecimalEncoder)
+                'body': json.dumps({
+                    'success': True,
+                    'usage': usage_data
+                }, cls=DecimalEncoder)
             }
         
         elif method == 'GET' and path.endswith('/usage/check'):
@@ -225,6 +228,7 @@ def lambda_handler(event, context):
                 'statusCode': 200,
                 'headers': headers,
                 'body': json.dumps({
+                    'success': True,
                     'message': 'Usage tracked successfully',
                     'usage': usage_data
                 }, cls=DecimalEncoder)

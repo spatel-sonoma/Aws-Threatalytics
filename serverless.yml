@@ -109,6 +109,8 @@ usagePlan:
 functions:
   analyze:
     handler: lambda_functions/analyze.lambda_handler
+    timeout: 60  # Increase to 60 seconds for GPT-4o responses
+    memorySize: 512  # Increase memory for better performance
     events:
       - http:
           path: /analyze
@@ -437,6 +439,10 @@ functions:
   subscriptionManager:
     handler: lambda_functions/subscription_manager.lambda_handler
     environment:
+      STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET}
+      USERS_TABLE: ${self:custom.usersTable}
+      SUBSCRIPTIONS_TABLE: ThreatalyticsSubscriptions
       STRIPE_PRICE_ID_STARTER: ${env:STRIPE_PRICE_ID_STARTER, 'price_starter'}
       STRIPE_PRICE_ID_PROFESSIONAL: ${env:STRIPE_PRICE_ID_PROFESSIONAL, 'price_professional'}
       STRIPE_PRICE_ID_ENTERPRISE: ${env:STRIPE_PRICE_ID_ENTERPRISE, 'price_enterprise'}

@@ -9,8 +9,30 @@ dynamodb = boto3.resource('dynamodb')
 users_table = dynamodb.Table(os.environ.get('USERS_TABLE', 'ThreatalyticsUsers'))
 subscriptions_table = dynamodb.Table(os.environ.get('SUBSCRIPTIONS_TABLE', 'ThreatalyticsPlans'))
 
-# Initialize Stripe
-stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+# --- Load Stripe key from Secrets Manager (preferred) ---
+STRIPE_SECRET_NAME = os.environ.get('STRIPE_SECRET_NAME')  # e.g. 'threatalytics/stripe-key'
+stripe_api_key = None
+if STRIPE_SECRET_NAME:
+    try:
+        sm = boto3.client('secretsmanager')
+        secret_resp = sm.get_secret_value(SecretId=STRIPE_SECRET_NAME)
+        secret_str = secret_resp.get('SecretString', '') or ''
+        # support both JSON secret ({"STRIPE_SECRET_KEY": "sk_..."} or {"api_key": "sk_..."})
+        try:
+            parsed = json.loads(secret_str)
+            stripe_api_key = parsed.get('STRIPE_SECRET_KEY') or parsed.get('stripe_secret_key') or parsed.get('api_key') or parsed.get('secret')
+        except Exception:
+            # secret is raw string (the key itself)
+            stripe_api_key = secret_str.strip() or None
+    except Exception as e:
+        print(f"Could not read secret {STRIPE_SECRET_NAME} from Secrets Manager: {e}")
+
+# fallback: direct env var (older config)
+if not stripe_api_key:
+    stripe_api_key = os.environ.get('STRIPE_SECRET_KEY')
+
+# set stripe api key (or leave None)
+stripe.api_key = stripe_api_key
 
 # Stripe Price IDs (update these with your actual Stripe price IDs)
 STRIPE_PRICES = {
@@ -52,17 +74,17 @@ def get_user_from_token(event):
         return None
 
 def lambda_handler(event, context):
-    """
-    Subscription Management Lambda
-    Endpoints:
-    - POST /subscription/create - Create Stripe checkout session
-    - GET /subscription/status - Get subscription status
-    - POST /subscription/cancel - Cancel subscription
-    - GET /subscription/portal - Get customer portal URL
-    """
-    
     headers = get_cors_headers()
-    
+
+    # quick fail if stripe key missing (so we don't call stripe and get unclear error)
+    if not stripe.api_key:
+        print("Stripe API key is not configured. Check STRIPE_SECRET_NAME or STRIPE_SECRET_KEY environment.")
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({'error': 'Stripe API key not configured on server'})
+        }
+
     # Handle OPTIONS
     if event.get('httpMethod') == 'OPTIONS':
         return {
@@ -70,11 +92,11 @@ def lambda_handler(event, context):
             'headers': headers,
             'body': json.dumps({'message': 'CORS OK'})
         }
-    
+
     try:
         path = event.get('path', '')
         method = event.get('httpMethod', '')
-        
+
         # Get user from token
         user_id = get_user_from_token(event)
         if not user_id:
@@ -83,48 +105,59 @@ def lambda_handler(event, context):
                 'headers': headers,
                 'body': json.dumps({'error': 'Unauthorized'})
             }
-        
+
         # Get user data
         user_response = users_table.get_item(Key={'user_id': user_id})
         user = user_response.get('Item', {})
         email = user.get('email')
-        
+
+        # If email missing, try to read from token (some tokens include email)
+        if not email:
+            try:
+                auth_header = event.get('headers', {}).get('Authorization', '')
+                token = auth_header.replace('Bearer ', '')
+                payload = token.split('.')[1]
+                payload += '=' * (4 - len(payload) % 4)
+                decoded = json.loads(_import_('base64').b64decode(payload))
+                email = decoded.get('email') or decoded.get('username')
+            except Exception:
+                pass
+
         if not email:
             return {
                 'statusCode': 400,
                 'headers': headers,
                 'body': json.dumps({'error': 'User email not found'})
             }
-        
+
         if method == 'POST' and path.endswith('/subscription/create'):
-            # Create Stripe checkout session
             body = json.loads(event.get('body', '{}'))
             plan = body.get('plan', 'starter')
-            
+
             if plan not in STRIPE_PRICES:
                 return {
                     'statusCode': 400,
                     'headers': headers,
                     'body': json.dumps({'error': 'Invalid plan'})
                 }
-            
+
             # Get or create Stripe customer
             stripe_customer_id = user.get('stripe_customer_id')
-            
+
             if not stripe_customer_id:
                 customer = stripe.Customer.create(
                     email=email,
                     metadata={'user_id': user_id}
                 )
                 stripe_customer_id = customer.id
-                
+
                 # Update user with Stripe customer ID
                 users_table.update_item(
                     Key={'user_id': user_id},
                     UpdateExpression='SET stripe_customer_id = :cid',
                     ExpressionAttributeValues={':cid': stripe_customer_id}
                 )
-            
+
             # Create checkout session
             checkout_session = stripe.checkout.Session.create(
                 customer=stripe_customer_id,
@@ -141,20 +174,19 @@ def lambda_handler(event, context):
                     'plan': plan
                 }
             )
-            
+
             return {
                 'statusCode': 200,
                 'headers': headers,
                 'body': json.dumps({
-                    'checkoutUrl': checkout_session.url,
+                    'url': checkout_session.url,
                     'sessionId': checkout_session.id
                 })
             }
-        
+
         elif method == 'GET' and path.endswith('/subscription/status'):
-            # Get subscription status
             stripe_customer_id = user.get('stripe_customer_id')
-            
+
             if not stripe_customer_id:
                 return {
                     'statusCode': 200,
@@ -165,14 +197,13 @@ def lambda_handler(event, context):
                         'message': 'No active subscription'
                     })
                 }
-            
-            # Get active subscriptions from Stripe
+
             subscriptions = stripe.Subscription.list(
                 customer=stripe_customer_id,
                 status='active',
                 limit=1
             )
-            
+
             if subscriptions.data:
                 sub = subscriptions.data[0]
                 return {
@@ -180,7 +211,7 @@ def lambda_handler(event, context):
                     'headers': headers,
                     'body': json.dumps({
                         'active': True,
-                        'plan': sub.items.data[0].price.metadata.get('plan', user.get('plan', 'free')),
+                        'plan': sub['items']['data'][0]['price'].get('metadata', {}).get('plan', user.get('plan', 'free')),
                         'status': sub.status,
                         'current_period_end': sub.current_period_end,
                         'cancel_at_period_end': sub.cancel_at_period_end
@@ -196,33 +227,30 @@ def lambda_handler(event, context):
                         'message': 'No active subscription'
                     })
                 }
-        
+
         elif method == 'POST' and path.endswith('/subscription/cancel'):
-            # Cancel subscription
             stripe_customer_id = user.get('stripe_customer_id')
-            
+
             if not stripe_customer_id:
                 return {
                     'statusCode': 400,
                     'headers': headers,
                     'body': json.dumps({'error': 'No subscription found'})
                 }
-            
-            # Get active subscription
+
             subscriptions = stripe.Subscription.list(
                 customer=stripe_customer_id,
                 status='active',
                 limit=1
             )
-            
+
             if subscriptions.data:
                 sub = subscriptions.data[0]
-                # Cancel at period end (don't cancel immediately)
                 stripe.Subscription.modify(
                     sub.id,
                     cancel_at_period_end=True
                 )
-                
+
                 return {
                     'statusCode': 200,
                     'headers': headers,
@@ -237,24 +265,22 @@ def lambda_handler(event, context):
                     'headers': headers,
                     'body': json.dumps({'error': 'No active subscription found'})
                 }
-        
+
         elif method == 'GET' and path.endswith('/subscription/portal'):
-            # Get customer portal URL
             stripe_customer_id = user.get('stripe_customer_id')
-            
+
             if not stripe_customer_id:
                 return {
                     'statusCode': 400,
                     'headers': headers,
                     'body': json.dumps({'error': 'No Stripe customer found'})
                 }
-            
-            # Create portal session
+
             portal_session = stripe.billing_portal.Session.create(
                 customer=stripe_customer_id,
                 return_url='https://d1xoad2p9303mu.cloudfront.net/'
             )
-            
+
             return {
                 'statusCode': 200,
                 'headers': headers,
@@ -262,14 +288,14 @@ def lambda_handler(event, context):
                     'portalUrl': portal_session.url
                 })
             }
-        
+
         else:
             return {
                 'statusCode': 404,
                 'headers': headers,
                 'body': json.dumps({'error': 'Endpoint not found'})
             }
-    
+
     except Exception as e:
         print(f"Error in subscription management: {e}")
         return {

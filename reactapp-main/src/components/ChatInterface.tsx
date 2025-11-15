@@ -334,6 +334,11 @@ const ChatInterface = ({
         const data = await response.json();
         responseText = data.choices[0]?.message?.content || "Unable to process image.";
         
+        // Track image analysis usage
+        if (trackApiUsage) {
+          await trackApiUsage('image-analysis');
+        }
+        
       } else {
         // Regular text-based analysis
         const API_KEY = 'TTWy409iie9ozE5vIW5rOhZSe3ZC3OU4hYDjQJOd';
@@ -372,11 +377,11 @@ const ChatInterface = ({
 
         const data = await response.json();
         responseText = data.result || data.analysis || data.report || data.recommendations || "No response";
-        
-        // Track API usage after successful response
-        if (trackApiUsage) {
-          await trackApiUsage(analysisType);
-        }
+      }
+      
+      // Track API usage after successful response (before showing assistant message)
+      if (trackApiUsage && !currentImage) {
+        await trackApiUsage(analysisType);
       }
 
       const assistantMessage: Message = { 
@@ -495,7 +500,7 @@ const ChatInterface = ({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-[#1a1a1a]">
       {/* Header with Mode Badge */}
       {messages.length > 0 && (
         <div className="border-b border-border px-6 py-3 bg-[#0f0f0f]">
@@ -515,17 +520,17 @@ const ChatInterface = ({
         <div className="max-w-6xl mx-auto">{/* Increased max width for better readability */}
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full p-4">
-              <div className="text-center mb-12">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center text-2xl text-white mx-auto mb-6">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center text-2xl text-white mx-auto mb-4">
                   🛡️
                 </div>
-                <h1 className="text-4xl font-bold mb-3">Welcome to Threatalytics AI</h1>
-                <p className="text-muted-foreground text-lg">
-                Advanced threat analysis powered by GPT-4. Choose an analysis type and start your conversation.
+                <h1 className="text-3xl font-bold mb-2 text-white">Welcome to Threatalytics AI</h1>
+                <p className="text-gray-400 text-base">
+                Advanced threat analysis powered by GPT-4o. Choose an analysis type and start your conversation.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl w-full">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl w-full">
               {Object.entries(modeConfig).map(([key, mode]) => (
                 <button
                   key={key}
@@ -534,19 +539,13 @@ const ChatInterface = ({
                     setInput(mode.suggestion);
                   }}
                   className={cn(
-                    "p-6 rounded-lg border text-left group transition-all",
+                    "p-4 rounded-lg border text-center group transition-all",
                     "hover:border-orange-600/50 hover:shadow-lg hover:-translate-y-1",
-                    analysisType === key ? 'bg-orange-600 border-orange-600 text-white' : 'bg-card hover:bg-card/80'
+                    analysisType === key ? 'bg-orange-600 border-orange-600 text-white' : 'bg-[#0f0f0f] border-gray-800 hover:bg-[#252525]'
                   )}
                 >
-                  <div className="text-2xl mb-3">{mode.icon}</div>
-                  <h3 className="text-lg font-semibold mb-2">{mode.title}</h3>
-                  <p className={cn(
-                    "text-sm leading-relaxed",
-                    analysisType === key ? 'text-orange-100' : 'text-muted-foreground'
-                  )}>
-                    {mode.suggestion}
-                  </p>
+                  <div className="text-3xl mb-2">{mode.icon}</div>
+                  <h3 className="text-sm font-semibold mb-1">{mode.title}</h3>
                 </button>
               ))}
             </div>

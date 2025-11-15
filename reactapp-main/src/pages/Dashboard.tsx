@@ -58,6 +58,7 @@ const Dashboard = () => {
         onSelectAnalysis={setSelectedAnalysis}
         onNewAnalysis={handleNewAnalysis}
         onUpgradeClick={() => setShowUpgradeModal(true)}
+        usage={usage}
       />
       <main className="flex-1 overflow-hidden relative">
         {/* Floating Upgrade Button */}

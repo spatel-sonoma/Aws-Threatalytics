@@ -5,12 +5,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import UsageDisplay from "@/components/UsageDisplay";
 import { useState } from "react";
+import { UsageData } from "@/lib/usage-service";
 
 interface SidebarProps {
   selectedAnalysis: string;
   onSelectAnalysis: (mode: string) => void;
   onNewAnalysis?: () => void;
   onUpgradeClick?: () => void;
+  usage?: UsageData | null; // Add usage prop for real-time updates
 }
 
 const ANALYSIS_TYPES = [
@@ -20,7 +22,7 @@ const ANALYSIS_TYPES = [
   { id: 'drill', name: 'Simulate Drill', icon: Target }
 ];
 
-const Sidebar = ({ selectedAnalysis, onSelectAnalysis, onNewAnalysis, onUpgradeClick }: SidebarProps) => {
+const Sidebar = ({ selectedAnalysis, onSelectAnalysis, onNewAnalysis, onUpgradeClick, usage }: SidebarProps) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -136,6 +138,7 @@ const Sidebar = ({ selectedAnalysis, onSelectAnalysis, onNewAnalysis, onUpgradeC
       {/* Usage Display */}
       <div className="border-t p-4">
         <UsageDisplay 
+          usage={usage}
           onUpgradeClick={onUpgradeClick}
           compact 
           showUpgradeButton={true}

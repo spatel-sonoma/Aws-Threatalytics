@@ -10,24 +10,38 @@ interface UsageDisplayProps {
     onUpgradeClick?: () => void;
     compact?: boolean;
     showUpgradeButton?: boolean;
+    usage?: UsageData | null; // Accept usage from parent to show real-time updates
 }
 
 const UsageDisplay = ({ 
     onUpgradeClick, 
     compact = false,
-    showUpgradeButton = true 
+    showUpgradeButton = true,
+    usage: externalUsage
 }: UsageDisplayProps) => {
-    const [usage, setUsage] = useState<UsageData | null>(null);
+    const [internalUsage, setInternalUsage] = useState<UsageData | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Use external usage if provided, otherwise use internal
+    const usage = externalUsage !== undefined ? externalUsage : internalUsage;
+
     useEffect(() => {
-        loadUsage();
-    }, []);
+        // Only load usage if not provided externally
+        if (externalUsage === undefined) {
+            loadUsage();
+            
+            // Set up auto-refresh every 10 seconds for real-time updates
+            const interval = setInterval(loadUsage, 10000);
+            return () => clearInterval(interval);
+        } else {
+            setLoading(false);
+        }
+    }, [externalUsage]);
 
     const loadUsage = async () => {
         try {
             const data = await usageService.getUsage();
-            setUsage(data);
+            setInternalUsage(data);
         } catch (error) {
             console.error('Failed to load usage:', error);
             // Silently fail - don't show error popup

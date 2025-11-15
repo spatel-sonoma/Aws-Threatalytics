@@ -83,15 +83,24 @@ export const useUsageTracking = () => {
     };
 
     /**
-     * Track API usage after successful request
+     * Track API usage after successful request and refresh UI
      */
     const trackApiUsage = async (endpoint: string) => {
         try {
             await usageService.trackUsage(endpoint);
-            // Reload usage data
-            await loadData();
+            // Immediately reload usage data to update UI
+            const usageData = await usageService.getUsage();
+            setUsage(usageData);
+            
+            // Update canMakeRequest status
+            if (usageData) {
+                const { allowed } = await usageService.canMakeRequest();
+                setCanMakeRequest(allowed);
+            }
         } catch (error) {
             console.error('Failed to track usage:', error);
+            // Still try to refresh data
+            await loadData();
         }
     };
 
