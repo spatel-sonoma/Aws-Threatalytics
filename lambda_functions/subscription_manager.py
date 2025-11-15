@@ -214,8 +214,8 @@ def lambda_handler(event, context):
                     'quantity': 1,
                 }],
                 mode='subscription',
-                success_url=f'https://d29k5fl5sa0elz.cloudfront.net/?session_id={{CHECKOUT_SESSION_ID}}&plan={plan_id}&user_id={user_id}',
-                cancel_url='https://d29k5fl5sa0elz.cloudfront.net/?cancelled=true',
+                success_url=f'https://d29k5fl5sa0elz.cloudfront.net/dashboard/?session_id={{CHECKOUT_SESSION_ID}}&plan={plan_id}&user_id={user_id}',
+                cancel_url='https://d29k5fl5sa0elz.cloudfront.net/dashboard/?cancelled=true',
                 metadata={
                     'user_id': user_id,
                     'plan': plan_id

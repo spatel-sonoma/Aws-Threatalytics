@@ -376,7 +376,7 @@ const ChatInterface = ({
         }
 
         const data = await response.json();
-        responseText = data.result || data.analysis || data.report || data.recommendations || "No response";
+        responseText = data.result || data.analysis || data.report || data.recommendations || data.redacted || data.simulation || "No response";
       }
       
       // Track API usage after successful response (before showing assistant message)

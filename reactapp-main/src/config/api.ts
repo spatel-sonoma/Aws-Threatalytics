@@ -9,7 +9,9 @@ export const ENDPOINTS = {
     analysis: {
         analyze: '/analyze',          // ✅ Live - Threat analysis with GPT-4
         redact: '/redact',           // ✅ Live - PII redaction
-        generateReport: '/generate-report', // ✅ Live - Generate security reports
+        report: '/generate-report',           // ✅ Live - Generate security reports
+        generateReport: '/generate-report', // ✅ Live - Alternative report endpoint
+        drill: '/simulate-drill',             // ✅ Live - Simulate drill scenarios
         simulateDrill: '/simulate-drill'   // ✅ Live but has 504 Timeout Error
     },
 

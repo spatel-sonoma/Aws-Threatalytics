@@ -247,6 +247,10 @@ class SubscriptionService {
      */
     async verifyPayment(sessionId: string, plan: string): Promise<void> {
         try {
+            console.log('🔍 Verifying payment...', { sessionId, plan });
+            console.log('📍 API URL:', `${this.baseUrl}/subscription/verify`);
+            console.log('📍 Headers:', this.getAuthHeaders());
+            
             const response = await fetch(`${this.baseUrl}/subscription/verify`, {
                 method: 'POST',
                 headers: this.getAuthHeaders(),
@@ -256,20 +260,25 @@ class SubscriptionService {
                 }),
             });
 
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
             if (!response.ok) {
                 const error = await response.text();
-                throw new Error(`Failed to verify payment: ${error}`);
+                console.error('❌ Response error:', error);
+                throw new Error(`Failed to verify payment (${response.status}): ${error}`);
             }
 
             const data = await response.json();
+            console.log('✅ Response data:', data);
             
             if (!data.success) {
                 throw new Error(data.message || 'Payment verification failed');
             }
             
-            console.log('Payment verified successfully:', data);
+            console.log('✅ Payment verified successfully:', data);
         } catch (error) {
-            console.error('Error verifying payment:', error);
+            console.error('❌ Error verifying payment:', error);
             throw error;
         }
     }
